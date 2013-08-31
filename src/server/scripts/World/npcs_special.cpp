@@ -634,7 +634,7 @@ public:
 
         void PatientDied(Location* point)
         {
-            Player* player = Unit::GetPlayer(*me, PlayerGUID);
+            Player* player = ObjectAccessor::GetPlayer(*me, PlayerGUID);
             if (player && ((player->GetQuestStatus(6624) == QUEST_STATUS_INCOMPLETE) || (player->GetQuestStatus(6622) == QUEST_STATUS_INCOMPLETE)))
             {
                 ++PatientDiedCount;
@@ -1575,190 +1575,95 @@ public:
 ## npc_brewfest_reveler
 ####*/
 
-class npc_brewfest_reveler : public CreatureScript
+enum BrewfestReveler
 {
-public:
-    npc_brewfest_reveler() : CreatureScript("npc_brewfest_reveler") { }
-
-    struct npc_brewfest_revelerAI : public ScriptedAI
-    {
-        npc_brewfest_revelerAI(Creature* creature) : ScriptedAI(creature) {}
-        void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
-        {
-            if (!IsHolidayActive(HOLIDAY_BREWFEST))
-                return;
-
-            if (emote == TEXT_EMOTE_DANCE)
-                me->CastSpell(player, 41586, false);
-        }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new npc_brewfest_revelerAI(creature);
-    }
+    SPELL_BREWFEST_TOAST = 41586
 };
 
+class npc_brewfest_reveler : public CreatureScript
+{
+    public:
+        npc_brewfest_reveler() : CreatureScript("npc_brewfest_reveler") { }
 
-#define SAY_RANDOM_MOJO0    "Now that's what I call froggy-style!"
-#define SAY_RANDOM_MOJO1    "Your lily pad or mine?"
-#define SAY_RANDOM_MOJO2    "This won't take long, did it?"
-#define SAY_RANDOM_MOJO3    "I thought you'd never ask!"
-#define SAY_RANDOM_MOJO4    "I promise not to give you warts..."
-#define SAY_RANDOM_MOJO5    "Feelin' a little froggy, are ya?"
-#define SAY_RANDOM_MOJO6a   "Listen, "
-#define SAY_RANDOM_MOJO6b   ", I know of a little swamp not too far from here...."
-#define SAY_RANDOM_MOJO7    "There's just never enough Mojo to go around..."
+        struct npc_brewfest_revelerAI : public ScriptedAI
+        {
+            npc_brewfest_revelerAI(Creature* creature) : ScriptedAI(creature) { }
+
+            void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
+            {
+                if (!IsHolidayActive(HOLIDAY_BREWFEST))
+                    return;
+
+                if (emote == TEXT_EMOTE_DANCE)
+                    me->CastSpell(player, SPELL_BREWFEST_TOAST, false);
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return new npc_brewfest_revelerAI(creature);
+        }
+};
+
+enum Mojo
+{
+    SAY_MOJO                = 0,
+
+    SPELL_FEELING_FROGGY    = 43906,
+    SPELL_SEDUCTION_VISUAL  = 43919
+};
 
 class npc_mojo : public CreatureScript
 {
-public:
-    npc_mojo() : CreatureScript("npc_mojo") { }
+    public:
+        npc_mojo() : CreatureScript("npc_mojo") { }
 
-    struct npc_mojoAI : public ScriptedAI
-    {
-        npc_mojoAI(Creature* creature) : ScriptedAI(creature) {Reset();}
-        uint32 hearts;
-        uint64 victimGUID;
-        void Reset() OVERRIDE
+        struct npc_mojoAI : public ScriptedAI
         {
-            victimGUID = 0;
-            hearts = 15000;
-            if (Unit* own = me->GetOwner())
-                me->GetMotionMaster()->MoveFollow(own, 0, 0);
-        }
+            npc_mojoAI(Creature* creature) : ScriptedAI(creature) { }
 
-        void EnterCombat(Unit* /*who*/)OVERRIDE {}
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if (me->HasAura(20372))
+            void Reset() OVERRIDE
             {
-                if (hearts <= diff)
+                _victimGUID = 0;
+
+                if (Unit* owner = me->GetOwner())
+                    me->GetMotionMaster()->MoveFollow(owner, 0.0f, 0.0f);
+            }
+
+            void EnterCombat(Unit* /*who*/) OVERRIDE { }
+            void UpdateAI(uint32 diff) OVERRIDE { }
+
+            void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
+            {
+                me->HandleEmoteCommand(emote);
+                Unit* owner = me->GetOwner();
+                if (emote != TEXT_EMOTE_KISS || !owner || owner->GetTypeId() != TYPEID_PLAYER ||
+                    owner->ToPlayer()->GetTeam() != player->GetTeam())
                 {
-                    me->RemoveAurasDueToSpell(20372);
-                    hearts = 15000;
-                } hearts -= diff;
-            }
-        }
+                    return;
+                }
 
-        void ReceiveEmote(Player* player, uint32 emote) OVERRIDE
-        {
-            me->HandleEmoteCommand(emote);
-            Unit* owner = me->GetOwner();
-            if (emote != TEXT_EMOTE_KISS || !owner || owner->GetTypeId() != TYPEID_PLAYER ||
-                owner->ToPlayer()->GetTeam() != player->GetTeam())
-            {
-                return;
-            }
+                Talk(SAY_MOJO, player->GetGUID());
 
-            std::string whisp = "";
-            switch (rand() % 8)
-            {
-                case 0:
-                    whisp.append(SAY_RANDOM_MOJO0);
-                    break;
-                case 1:
-                    whisp.append(SAY_RANDOM_MOJO1);
-                    break;
-                case 2:
-                    whisp.append(SAY_RANDOM_MOJO2);
-                    break;
-                case 3:
-                    whisp.append(SAY_RANDOM_MOJO3);
-                    break;
-                case 4:
-                    whisp.append(SAY_RANDOM_MOJO4);
-                    break;
-                case 5:
-                    whisp.append(SAY_RANDOM_MOJO5);
-                    break;
-                case 6:
-                    whisp.append(SAY_RANDOM_MOJO6a);
-                    whisp.append(player->GetName());
-                    whisp.append(SAY_RANDOM_MOJO6b);
-                    break;
-                case 7:
-                    whisp.append(SAY_RANDOM_MOJO7);
-                    break;
+                if (_victimGUID)
+                    if (Player* victim = ObjectAccessor::GetPlayer(*me, _victimGUID))
+                        victim->RemoveAura(SPELL_FEELING_FROGGY);
+
+                _victimGUID = player->GetGUID();
+
+                DoCast(player, SPELL_FEELING_FROGGY, true);
+                DoCast(me, SPELL_SEDUCTION_VISUAL, true);
+                me->GetMotionMaster()->MoveFollow(player, 0.0f, 0.0f);
             }
 
-            me->MonsterWhisper(whisp.c_str(), player->GetGUID());
-            if (victimGUID)
-                if (Player* victim = Unit::GetPlayer(*me, victimGUID))
-                    victim->RemoveAura(43906); // remove polymorph frog thing
-            me->AddAura(43906, player); // add polymorph frog thing
-            victimGUID = player->GetGUID();
-            DoCast(me, 20372, true); // tag.hearts
-            me->GetMotionMaster()->MoveFollow(player, 0, 0);
-            hearts = 15000;
-        }
-    };
+        private:
+            uint64 _victimGUID;
+        };
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new npc_mojoAI(creature);
-    }
-};
-
-class npc_risen_ally : public CreatureScript
-{
-public:
-    npc_risen_ally() : CreatureScript("npc_risen_ally") { }
-
-       CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_risen_allyAI(creature);
-    }
-
-    struct npc_risen_allyAI : ScriptedAI
-    {
-        npc_risen_allyAI(Creature* creature) : ScriptedAI(creature) {}
-
-        void InitializeAI()
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            me->setPowerType(POWER_ENERGY);
-            me->SetMaxPower(POWER_ENERGY, 100);
-            me->SetPower(POWER_ENERGY, 100);
-            me->SetSheath(SHEATH_STATE_MELEE);
-            me->SetByteFlag(UNIT_FIELD_BYTES_2, 2, UNIT_CAN_BE_ABANDONED);
-            me->SetUInt32Value(UNIT_FIELD_BYTES_0, 2048);
-            me->SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
-            me->SetUInt32Value(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_NONE);
-            me->SetFloatValue(UNIT_FIELD_COMBATREACH, 1.5f);
+            return new npc_mojoAI(creature);
         }
-
-        void Reset()
-        {
-            me->setPowerType(POWER_ENERGY);
-            me->SetMaxPower(POWER_ENERGY, 100);
-        }
-
-        void IsSummonedBy(Unit* owner)
-        {
-            me->setPowerType(POWER_ENERGY);
-            me->SetMaxPower(POWER_ENERGY, 100);
-            me->SetPower(POWER_ENERGY, 100);
-        }
-
-        void JustDied(Unit* /*killer*/)
-        {
-           if (me->GetOwner())
-              {
-                 me->GetOwner()->RemoveAurasDueToSpell(62218);
-                 me->GetOwner()->RemoveAurasDueToSpell(46619);
-              }
-        }
-
-        void UpdateAI(uint32 diff)
-        {
-           if (!me->IsCharmed())
-              me->DespawnOrUnsummon();
-
-           if (me->IsInCombat())
-              DoMeleeAttackIfReady();
-        }
-    };
 };
 
 enum TrainingDummy
@@ -2614,7 +2519,6 @@ void AddSC_npcs_special()
     new npc_steam_tonk();
     new npc_tonk_mine();
     new npc_brewfest_reveler();
-	new npc_risen_ally();
     new npc_mojo();
     new npc_training_dummy();
     new npc_wormhole();

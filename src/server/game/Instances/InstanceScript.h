@@ -22,8 +22,6 @@
 #include "ZoneScript.h"
 #include "World.h"
 #include "ObjectMgr.h"
-//#include "GameObject.h"
-//#include "Map.h"
 
 #define OUT_SAVE_INST_DATA             TC_LOG_DEBUG(LOG_FILTER_TSCR, "Saving Instance Data for Instance %s (Map %d, Instance Id %d)", instance->GetMapName(), instance->GetId(), instance->GetInstanceId())
 #define OUT_SAVE_INST_DATA_COMPLETE    TC_LOG_DEBUG(LOG_FILTER_TSCR, "Saving Instance Data for Instance %s (Map %d, Instance Id %d) completed.", instance->GetMapName(), instance->GetId(), instance->GetInstanceId())
@@ -176,9 +174,6 @@ class InstanceScript : public ZoneScript
         // Send Notify to all players in instance
         void DoSendNotifyToInstance(char const* format, ...);
 
-        // Complete Achievement for all players in instance
-        void DoCompleteAchievement(uint32 achievement);
-
         // Update Achievement Criteria for all players in instance
         void DoUpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1 = 0, uint32 miscValue2 = 0, Unit* unit = NULL);
 
@@ -238,4 +233,16 @@ class InstanceScript : public ZoneScript
         MinionInfoMap minions;
         uint32 completedEncounters; // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
 };
-#endif
+
+template<class AI, class T>
+AI* GetInstanceAI(T* obj, char const* scriptName)
+{
+    if (InstanceMap* instance = obj->GetMap()->ToInstanceMap())
+        if (instance->GetInstanceScript())
+            if (instance->GetScriptId() == sObjectMgr->GetScriptId(scriptName))
+                return new AI(obj);
+
+    return NULL;
+}
+
+#endif // TRINITY_INSTANCE_DATA_H

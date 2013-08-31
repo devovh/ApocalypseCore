@@ -52,17 +52,7 @@ enum WarlockSpells
     SPELL_WARLOCK_LIFE_TAP_ENERGIZE_2               = 32553,
     SPELL_WARLOCK_SOULSHATTER                       = 32835,
     SPELL_WARLOCK_SIPHON_LIFE_HEAL                  = 63106,
-    SPELL_WARLOCK_GLYPH_OF_SUCCUBUS                 = 56250,
-    SPELL_PRIEST_SHADOW_WORD_DEATH                  = 32409,	
-    SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL        = 31117,
- 	SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R1           = 54049,
- 	SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R2           = 54050,
- 	SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R3           = 54051,
- 	SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R4           = 54052,
- 	SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R5           = 54053,
- 	SPELL_WARLOCK_IMPROVED_FELHUNTER_R1             = 54037,
- 	SPELL_WARLOCK_IMPROVED_FELHUNTER_R2             = 54038,
- 	SPELL_WARLOCK_IMPROVED_FELHUNTER_EFFECT         = 54425
+    SPELL_WARLOCK_UNSTABLE_AFFLICTION_DISPEL        = 31117
 };
 
 enum WarlockSpellIcons
@@ -298,47 +288,10 @@ class spell_warl_demonic_circle_summon : public SpellScriptLoader
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_warl_demonic_circle_summon_AuraScript::HandleDummyTick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
             }
         };
-        class spell_warl_demonic_circle_summon_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_warl_demonic_circle_summon_SpellScript)
 
-            SpellCastResult CheckIfInvalidPosition()
-            {
-                Unit* caster = GetCaster();
-                switch (caster->GetMapId())
-                {
-                case 617: // Dalaran Sewers
-                    // casting on starting pipes
-                    if (caster->GetPositionZ() > 13.0f)
-                        return SPELL_FAILED_NOT_HERE;
-                    break;
-                case 618: // Ring of Valor
-                    if(caster->GetDistance2d(763.632385f, -306.162384f) < 1.5f || // casting over a small pilar
-                        caster->GetDistance2d(763.611145f, -261.856750f) < 1.5f ||
-                        caster->GetDistance2d(723.644287f, -284.493256f) < 4.0f || // casting over a big pilar
-                        caster->GetDistance2d(802.211609f, -284.493256f) < 4.0f ||
-                        caster->GetPositionZ() < 28.0f) // casting on the elevator
-                        return SPELL_FAILED_NOT_HERE;
-                    break;
-                }
-
-             return SPELL_CAST_OK;
-           }
-
-           void Register() OVERRIDE
-           {
-               OnCheckCast += SpellCheckCastFn(spell_warl_demonic_circle_summon_SpellScript::CheckIfInvalidPosition);
-           }
-        };
-		
-        AuraScript* GetAuraScript() const
+        AuraScript* GetAuraScript() const OVERRIDE
         {
             return new spell_warl_demonic_circle_summon_AuraScript();
-        }
-		
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_warl_demonic_circle_summon_SpellScript();
         }
 };
 
@@ -903,42 +856,6 @@ class spell_warl_soulshatter : public SpellScriptLoader
         }
 };
 
-// 6358 - Seduction (Glyph of Succubus)
-class spell_warl_seduction : public SpellScriptLoader
-{
-    public:
-        spell_warl_seduction() : SpellScriptLoader("spell_warl_seduction") { }
-
-        class spell_warl_seduction_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_warl_seduction_SpellScript);
-
-            void HandleScriptEffect(SpellEffIndex /*effIndex*/)
-            {
-                Unit* caster = GetCaster();
-                if (Unit* target = GetHitUnit())
-                {
-                    if (caster->GetOwner() && caster->GetOwner()->HasAura(SPELL_WARLOCK_GLYPH_OF_SUCCUBUS))
-                    {
-                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE, 0, target->GetAura(SPELL_PRIEST_SHADOW_WORD_DEATH)); // SW:D shall not be removed.
-                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
-                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_LEECH);
-                    }
-                }
-            }
-
-            void Register() OVERRIDE
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_warl_seduction_SpellScript::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_APPLY_AURA);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_warl_seduction_SpellScript();
-        }
-};
-
 // -30108 - Unstable Affliction
 class spell_warl_unstable_affliction : public SpellScriptLoader
 {
@@ -979,83 +896,6 @@ class spell_warl_unstable_affliction : public SpellScriptLoader
         }
 };
 
-// Shadow Bite
-class spell_warl_shadow_bite : public SpellScriptLoader
-{
-    public:
-        spell_warl_shadow_bite() : SpellScriptLoader("spell_warl_shadow_bite") { }
-
-        class spell_warl_shadow_bite_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_warl_shadow_bite_SpellScript)
-        
-		    bool Validate(SpellInfo const* /*spell*/)
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R1))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R2))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R3))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R4))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_FELHUNTER_SHADOWBITE_R5))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_IMPROVED_FELHUNTER_R1))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_IMPROVED_FELHUNTER_R2))
-                    return false;
-                if (!sSpellMgr->GetSpellInfo(SPELL_WARLOCK_IMPROVED_FELHUNTER_EFFECT))
-                    return false;
-                return true;
-            }
-
-            void HandleScriptEffect(SpellEffIndex /*effIndex*/)
-            {
-                //Unit *caster = GetCaster();
-                // Get DoTs on target by owner (15% increase by dot)
-                // need to get this here from SpellEffects.cpp ?
-                // damage *= float(100.f  15.f * caster->getVictim()->GetDoTsByCaster(caster->GetOwnerGUID())) / 100.f;
-            }
-
-            // For Improved Felhunter
-            void HandleAfterHitEffect()
-            {
-                Unit *caster = GetCaster();
-                if(!caster) { return; };
-
-                // break if our caster is not a pet
-                if(!(caster->GetTypeId() == TYPEID_UNIT && caster->ToCreature()->IsPet())) { return; };
-
-                // break if pet has no owner and/or owner is not a player
-                Unit *owner = caster->GetOwner();
-                if(!(owner && (owner->GetTypeId() == TYPEID_PLAYER))) { return; };
-            
-                int32 amount;
-                // rank 1 - 4%
-                if(owner->HasAura(SPELL_WARLOCK_IMPROVED_FELHUNTER_R1)) { amount = 5; };
-
-                // rank 2 - 8%
-                if(owner->HasAura(SPELL_WARLOCK_IMPROVED_FELHUNTER_R2)) { amount = 9; };
-            
-                // Finally return the Mana to our Caster
-                if(AuraEffect * aurEff = owner->GetAuraEffect(SPELL_AURA_ADD_FLAT_MODIFIER, SPELLFAMILY_WARLOCK, 214, 0))
-                   caster->CastCustomSpell(caster,SPELL_WARLOCK_IMPROVED_FELHUNTER_EFFECT,&amount,NULL,NULL,true,NULL,aurEff,caster->GetGUID());
-            }
-
-            void Register() OVERRIDE
-           {
-                //OnEffectHitTarget = SpellEffectFn(spell_warl_shadow_bite_SpellScript::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-                AfterHit += SpellHitFn(spell_warl_shadow_bite_SpellScript::HandleAfterHitEffect);
-           }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-        return new spell_warl_shadow_bite_SpellScript();
-        }
-};
-
 void AddSC_warlock_spell_scripts()
 {
     new spell_warl_banish();
@@ -1075,7 +915,5 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_shadow_ward();
     new spell_warl_siphon_life();
     new spell_warl_soulshatter();
-    new spell_warl_seduction();
     new spell_warl_unstable_affliction();
-	new spell_warl_shadow_bite();
 }

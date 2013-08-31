@@ -32,12 +32,11 @@ enum PaladinSpells
     SPELL_PALADIN_DIVINE_PLEA                    = 54428,
     SPELL_PALADIN_BLESSING_OF_SANCTUARY_BUFF     = 67480,
     SPELL_PALADIN_BLESSING_OF_SANCTUARY_ENERGIZE = 57319,
-	SPELL_PALADIN_BLESSING_OF_SANCTUARY_HELPER   = 20912,
 
     SPELL_PALADIN_HOLY_SHOCK_R1                  = 20473,
     SPELL_PALADIN_HOLY_SHOCK_R1_DAMAGE           = 25912,
     SPELL_PALADIN_HOLY_SHOCK_R1_HEALING          = 25914,
-	
+
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_DRUID   = 37878,
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_PALADIN = 37879,
     SPELL_PALADIN_BLESSING_OF_LOWER_CITY_PRIEST  = 37880,
@@ -313,14 +312,12 @@ class spell_pal_blessing_of_sanctuary : public SpellScriptLoader
                 Unit* target = GetTarget();
                 if (Unit* caster = GetCaster())
                     caster->CastSpell(target, SPELL_PALADIN_BLESSING_OF_SANCTUARY_BUFF, true);
-                    target->CastSpell(target, SPELL_PALADIN_BLESSING_OF_SANCTUARY_HELPER, true);					
             }
 
             void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 Unit* target = GetTarget();
                 target->RemoveAura(SPELL_PALADIN_BLESSING_OF_SANCTUARY_BUFF, GetCasterGUID());
-				target->RemoveAura(SPELL_PALADIN_BLESSING_OF_SANCTUARY_HELPER);
             }
 
             bool CheckProc(ProcEventInfo& /*eventInfo*/)

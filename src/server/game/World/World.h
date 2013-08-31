@@ -100,7 +100,6 @@ enum WorldBoolConfigs
     CONFIG_INSTANT_TAXI,
     CONFIG_INSTANCE_IGNORE_LEVEL,
     CONFIG_INSTANCE_IGNORE_RAID,
-	CONFIG_EXTERNAL_MAIL,
     CONFIG_CAST_UNSTUCK,
     CONFIG_ALLOW_GM_GROUP,
     CONFIG_GM_LOWER_SECURITY,
@@ -151,8 +150,6 @@ enum WorldBoolConfigs
     CONFIG_ALLOW_TICKETS,
     CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES,
     CONFIG_PRESERVE_CUSTOM_CHANNELS,
-    CONFIG_ANTICHEAT_ENABLE,
-	CONFIG_BAN_PLAYER,
     CONFIG_PDUMP_NO_PATHS,
     CONFIG_PDUMP_NO_OVERWRITE,
     CONFIG_QUEST_IGNORE_AUTO_ACCEPT,
@@ -238,7 +235,6 @@ enum WorldIntConfigs
     CONFIG_START_GM_LEVEL,
     CONFIG_GROUP_VISIBILITY,
     CONFIG_MAIL_DELIVERY_DELAY,
-	CONFIG_EXTERNAL_MAIL_INTERVAL,
     CONFIG_UPTIME_UPDATE,
     CONFIG_SKILL_CHANCE_ORANGE,
     CONFIG_SKILL_CHANCE_YELLOW,
@@ -316,11 +312,8 @@ enum WorldIntConfigs
     CONFIG_DB_PING_INTERVAL,
     CONFIG_PRESERVE_CUSTOM_CHANNEL_DURATION,
     CONFIG_PERSISTENT_CHARACTER_CLEAN_FLAGS,
-    CONFIG_ANTICHEAT_REPORTS_INGAME_NOTIFICATION,
-    CONFIG_ANTICHEAT_MAX_REPORTS_FOR_DAILY_REPORT,
     CONFIG_LFG_OPTIONSMASK,
     CONFIG_MAX_INSTANCES_PER_HOUR,
-    CONFIG_ANTICHEAT_DETECTIONS_ENABLED,
     CONFIG_WARDEN_CLIENT_RESPONSE_DELAY,
     CONFIG_WARDEN_CLIENT_CHECK_HOLDOFF,
     CONFIG_WARDEN_CLIENT_FAIL_ACTION,
@@ -333,6 +326,9 @@ enum WorldIntConfigs
     CONFIG_WINTERGRASP_BATTLETIME,
     CONFIG_WINTERGRASP_NOBATTLETIME,
     CONFIG_WINTERGRASP_RESTART_AFTER_CRASH,
+    CONFIG_PACKET_SPOOF_POLICY,
+    CONFIG_PACKET_SPOOF_BANMODE,
+    CONFIG_PACKET_SPOOF_BANDURATION,
     INT_CONFIG_VALUE_COUNT
 };
 
@@ -359,10 +355,6 @@ enum Rates
     RATE_DROP_ITEM_REFERENCED_AMOUNT,
     RATE_DROP_MONEY,
     RATE_XP_KILL,
-    RATE_VIP_HONOR_PREMIUM,
-    RATE_XP_KILL_PREMIUM,
-    RATE_XP_QUEST_PREMIUM,
-    RATE_XP_EXPLORE_PREMIUM,
     RATE_XP_QUEST,
     RATE_XP_EXPLORE,
     RATE_REPAIRCOST,
@@ -698,6 +690,7 @@ class World
         void KickAll();
         void KickAllLess(AccountTypes sec);
         BanReturn BanAccount(BanMode mode, std::string const& nameOrIP, std::string const& duration, std::string const& reason, std::string const& author);
+        BanReturn BanAccount(BanMode mode, std::string const& nameOrIP, uint32 duration_secs, std::string const& reason, std::string const& author);
         bool RemoveBanAccount(BanMode mode, std::string const& nameOrIP);
         BanReturn BanCharacter(std::string const& name, std::string const& duration, std::string const& reason, std::string const& author);
         bool RemoveBanCharacter(std::string const& name);
@@ -777,7 +770,6 @@ class World
         time_t m_startTime;
         time_t m_gameTime;
         IntervalTimer m_timers[WUPDATE_COUNT];
-		IntervalTimer extmail_timer;
         time_t mail_timer;
         time_t mail_timer_expires;
         uint32 m_updateTime, m_updateTimeSum;

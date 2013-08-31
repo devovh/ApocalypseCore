@@ -177,7 +177,6 @@ enum Gurgthock
     QUEST_AMPHITHEATER_ANGUISH_YGGDRAS_1          = 12932,
     QUEST_AMPHITHEATER_ANGUISH_MAGNATAUR          = 12933,
     QUEST_AMPHITHEATER_ANGUISH_FROM_BEYOND        = 12934,
-	QUEST_THE_CHAMPION_OF_ANGUISH				  = 12948,
 
     NPC_ORINOKO_TUSKBREAKER                       = 30020,
     NPC_KORRAK_BLOODRAGER                         = 30023,
@@ -191,7 +190,6 @@ enum Gurgthock
     NPC_FIEND_AIR                                 = 30045,
     NPC_FIEND_FIRE                                = 30042,
     NPC_FIEND_EARTH                               = 30043,
-	NPC_VLADOF_THE_BUTCHER                        = 30022,
 
     SAY_QUEST_ACCEPT_TUSKARRMAGEDON               = 0,
     SAY_QUEST_ACCEPT_KORRAK_1                     = 1,
@@ -200,6 +198,9 @@ enum Gurgthock
     EMOTE_YGGDRAS_SPAWN                           = 4,
     SAY_STINKBEARD_SPAWN                          = 5,
     SAY_GURGTHOCK_ELEMENTAL_SPAWN                 = 6,
+    SAY_GURGTHOCK_7                               = 7,
+    SAY_QUEST_AMPHITHEATER_ANGUISH_YGGDRAS        = 8,
+    SAY_GURGTHOCK_9                               = 9,
 
     SAY_CALL_FOR_HELP                             = 0,
     SAY_RECRUIT                                   = 0,
@@ -321,13 +322,9 @@ public:
                             uiTimer = 2000;
                             uiPhase = 12;
                             break;
-						case QUEST_THE_CHAMPION_OF_ANGUISH:
-							uiTimer = 2000;
-							uiPhase = 15;
-							break;
-                   }
-                        break;
-                }
+                    }
+                    break;
+            }
         }
 
         void UpdateAI(uint32 diff) OVERRIDE
@@ -347,8 +344,6 @@ public:
 
             if (uiPhase)
             {
-                Player* player = me->GetPlayer(*me, _playerGUID);
-
                 if (uiTimer <= diff)
                 {
                     switch (uiPhase)
@@ -377,27 +372,14 @@ public:
                             uiPhase = 0;
                             break;
                         case 6:
-                            {
-                                if (!player)
-                                    return;
-
-                                std::string sText = ("The grand Amphitheater of Anguish awaits, " + std::string(player->GetName()) + ". Remember, once a battle starts you have to stay in the area. WIN OR DIE!");
-
-                                me->MonsterSay(sText.c_str(), LANG_UNIVERSAL, 0);
-                                uiTimer = 5000;
-                                uiPhase = 9;
-                            }
+                            Talk(SAY_GURGTHOCK_7, _playerGUID);
+                            uiTimer = 5000;
+                            uiPhase = 9;
                             break;
                         case 7:
-                            {
-                               if (!player)
-                                   return;
-
-                                std::string sText = ("Prepare to make your stand, " + std::string(player->GetName()) + "! Get in the Amphitheater and stand ready! Remember, you and your opponent must stay in the arena at all times or you will be disqualified!");
-                                me->MonsterSay(sText.c_str(), LANG_UNIVERSAL, 0);
-                                uiTimer = 3000;
-                                uiPhase = 8;
-                            }
+                            Talk(SAY_GURGTHOCK_9, _playerGUID);
+                            uiTimer = 3000;
+                            uiPhase = 8;
                             break;
                         case 8:
                             Talk(SAY_QUEST_ACCEPT_MAGNATAUR);
@@ -405,15 +387,9 @@ public:
                             uiPhase = 11;
                             break;
                         case 9:
-                            {
-                                if (!player)
-                                    return;
-
-                                std::string sText = ("Here we are once again, ladies and gentlemen. The epic struggle between life and death in the Amphitheater of Anguish! For this round we have " + std::string(player->GetName()) + " versus the hulking jormungar, Yg... Yggd? Yggdoze? Who comes up with these names?! " + std::string(player->GetName()) + " versus big worm!");
-                                me->MonsterYell(sText.c_str(), LANG_UNIVERSAL, 0);
-                                uiTimer = 10000;
-                                uiPhase = 10;
-                            }
+                            Talk(SAY_QUEST_AMPHITHEATER_ANGUISH_YGGDRAS, _playerGUID);
+                            uiTimer = 10000;
+                            uiPhase = 10;
                             break;
                         case 10:
                             me->SummonCreature(NPC_YGGDRAS, SpawnPosition[1], TEMPSUMMON_CORPSE_DESPAWN, 1000);
@@ -426,16 +402,10 @@ public:
                             uiPhase = 0;
                             break;
                         case 12:
-                        {
-                            if (!player)
-                                return;
-
-                            std::string sText = ("Prepare to make you stand, " + std::string(player->GetName()) + "! Get in the Amphitheater and stand ready! Remember, you and your opponent must stay in the arena at all times or you will be disqualified!");
-                            me->MonsterSay(sText.c_str(), LANG_UNIVERSAL, 0);
+                            Talk(SAY_GURGTHOCK_9, _playerGUID);
                             uiTimer = 5000;
                             uiPhase = 13;
-                        }
-                        break;
+                            break;
                         case 13:
                             Talk(SAY_GURGTHOCK_ELEMENTAL_SPAWN);
                             uiTimer = 3000;
@@ -447,15 +417,10 @@ public:
                                 creature->AI()->SetData(1, _bossRandom);
                             uiPhase = 0;
                             break;
-						case 15:
-							std::string sText = ("Prepare to make your stand, " + std::string(player->GetName()));
-							me->MonsterSay(sText.c_str(), LANG_UNIVERSAL, 0);
-							me->SummonCreature(NPC_VLADOF_THE_BUTCHER, SpawnPosition[1], TEMPSUMMON_CORPSE_DESPAWN, 1000);
-							uiPhase = 0;
-							break;
                     }
                 }
-                else uiTimer -= diff;
+                else
+                    uiTimer -= diff;
             }
         }
 
@@ -469,7 +434,7 @@ public:
             uint32 uiPhase;
             uint32 uiRemoveFlagTimer;
             uint32 uiQuest;
-		
+
     };
 
     bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) OVERRIDE
@@ -492,9 +457,6 @@ public:
             case QUEST_AMPHITHEATER_ANGUISH_FROM_BEYOND:
                 creature->AI()->SetData(1, quest->GetQuestId());
                 break;
-			case QUEST_THE_CHAMPION_OF_ANGUISH:
-				creature->AI()->SetData(1, quest->GetQuestId());
-				break;
         }
 
         creature->AI()->SetGUID(player->GetGUID());
@@ -506,129 +468,6 @@ public:
     {
         return new npc_gurgthockAI(creature);
     }
-};
-
-/*####
-## npc_vladof_the_butcher
-####*/
-
-enum vladof_spells{
-
-    EVENT_BLOOD_BOIL,
-    EVENT_BLOOD_PLAGUE,
-    EVENT_BLOOD_PRESENCE,
-    EVENT_FROST_FEVER,
-    EVENT_HYSRERIA,
-    EVENT_SLOW,
-    EVENT_DEFLECTION,
-    EVENT_WHIRLWIND,
-
-    //NPC_VLADOF_THE_BUTCHER spells
-
-    SPELL_BLOOD_BOIL                              = 55974,
-    SPELL_BLOOD_PLAGUE                            = 55973,
-    SPELL_BLOOD_PRESENCE                          = 50689,
-    SPELL_FROST_FEVER                             = 55095,
-    SPELL_HYSRERIA                                = 55975,
-    SPELL_SLOW                                    = 31589,
-    SPELL_DEFLECTION                              = 55976,
-    SPELL_WHIRLWIND                               = 55977,
-};
-
-class npc_vladof_the_butcher : public CreatureScript
-{
-public:
-    npc_vladof_the_butcher() : CreatureScript("npc_vladof_the_butcher") { }
-
-    CreatureAI* GetAI(Creature* creature) const
-    {
-        return new npc_vladof_the_butcherAI(creature);
-    }
-
-    struct npc_vladof_the_butcherAI  : public ScriptedAI
-    {
-        npc_vladof_the_butcherAI(Creature* creature) : ScriptedAI(creature)
-        {
-        }
-
-        EventMap events;
-
-        void Reset()
-        {
-            events.Reset();
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-            me->SetReactState(REACT_AGGRESSIVE);
-        }
-
-        void EnterCombat(Unit* /*who*/)
-        {
-            events.ScheduleEvent(EVENT_BLOOD_BOIL, 2000); // TODO: adjust timers
-            events.ScheduleEvent(EVENT_BLOOD_PLAGUE, 7000);
-            events.ScheduleEvent(EVENT_BLOOD_PRESENCE, 1000);
-            events.ScheduleEvent(EVENT_HYSRERIA, 21000);
-            events.ScheduleEvent(SPELL_SLOW, 6000);
-            events.ScheduleEvent(EVENT_FROST_FEVER, 6000);
-            events.ScheduleEvent(EVENT_DEFLECTION, 15000);
-            events.ScheduleEvent(EVENT_WHIRLWIND, 15000);
-        }
-
-        void UpdateAI(uint32 diff)
-        {
-            if (!UpdateVictim())
-                return;
-
-            events.Update(diff);
-
-            if (me->HasUnitState(UNIT_STATE_CASTING))
-                return;
-
-            while (uint32 eventId = events.ExecuteEvent())
-            {
-                switch (eventId)
-                {
-                    case EVENT_BLOOD_BOIL:
-                            DoCastVictim(SPELL_BLOOD_BOIL);
-                        events.ScheduleEvent(EVENT_BLOOD_BOIL, 8000);
-                        return;
-                    case EVENT_BLOOD_PLAGUE:
-                            DoCastVictim(SPELL_BLOOD_PLAGUE);
-                        events.ScheduleEvent(EVENT_BLOOD_PLAGUE, 8000);
-                        return;
-                    case EVENT_BLOOD_PRESENCE:
-                            DoCast(SPELL_BLOOD_PRESENCE);
-                        return;
-                    case EVENT_FROST_FEVER:
-                            DoCastVictim(SPELL_FROST_FEVER);
-                        events.ScheduleEvent(EVENT_FROST_FEVER, 15000);
-                        return;
-                    case EVENT_WHIRLWIND:
-                            DoCast(SPELL_WHIRLWIND);
-                        return;
-                    case EVENT_DEFLECTION:
-                            DoCastVictim(SPELL_DEFLECTION);
-                        return;
-                    case EVENT_SLOW:
-                            DoCastVictim(SPELL_SLOW);
-                        events.ScheduleEvent(EVENT_SLOW, 9000);
-                        return;
-                    case EVENT_HYSRERIA:
-                            DoCast(SPELL_HYSRERIA);
-                        return;
-                }
-            }
-
-            DoMeleeAttackIfReady();
-        }
-        
-        void JustDied(Unit* killer)
-        {
-
-            if (Player* player = killer->GetCharmerOrOwnerPlayerOrPlayerItself()){
-                player->GroupEventHappens(QUEST_THE_CHAMPION_OF_ANGUISH, player);
-            }
-        }
-    };
 };
 
 /*####
@@ -1640,7 +1479,7 @@ public:
                             _events.ScheduleEvent(EVENT_TURN_TO_POT, urand(25000, 41000));
                             break;
                         case EVENT_EASY_123:
-                            if (Player* player = Unit::GetPlayer(*me, _playerGUID))
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                             {
                                 Talk(SAY_EASY_123, _playerGUID);
                                 DoCast(player, SPELL_RANDOM_INGREDIENT_EASY_AURA);
@@ -1648,7 +1487,7 @@ public:
                             }
                             break;
                         case EVENT_MEDIUM_4:
-                            if (Player* player = Unit::GetPlayer(*me, _playerGUID))
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                             {
                                 Talk(SAY_MEDIUM_4, _playerGUID);
                                 DoCast(player, SPELL_RANDOM_INGREDIENT_MEDIUM_AURA);
@@ -1656,7 +1495,7 @@ public:
                             }
                             break;
                         case EVENT_MEDIUM_5:
-                            if (Player* player = Unit::GetPlayer(*me, _playerGUID))
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                             {
                                 Talk(SAY_MEDIUM_5, _playerGUID);
                                 DoCast(player, SPELL_RANDOM_INGREDIENT_MEDIUM_AURA);
@@ -1664,7 +1503,7 @@ public:
                             }
                             break;
                         case EVENT_HARD_6:
-                            if (Player* player = Unit::GetPlayer(*me, _playerGUID))
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                             {
                                 Talk(SAY_HARD_6, _playerGUID);
                                 DoCast(player, SPELL_RANDOM_INGREDIENT_HARD_AURA);
@@ -1981,7 +1820,6 @@ void AddSC_zuldrak()
     new npc_captured_rageclaw();
     new npc_gurgthock();
     new npc_orinoko_tuskbreaker();
-    new npc_vladof_the_butcher();
     new npc_korrak_bloodrager();
     new npc_yggdras();
     new npc_stinkbeard();
@@ -1995,5 +1833,5 @@ void AddSC_zuldrak()
     new spell_random_ingredient_aura();
     new spell_random_ingredient();
     new spell_pot_check();
-    new spell_fetch_ingredient_aura();	
+    new spell_fetch_ingredient_aura();
 }

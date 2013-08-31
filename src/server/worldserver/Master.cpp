@@ -44,6 +44,7 @@
 #include "RealmList.h"
 
 #include "BigNumber.h"
+#include "OpenSSLCrypto.h"
 
 #ifdef _WIN32
 #include "ServiceWin32.h"
@@ -121,24 +122,22 @@ public:
 /// Main function
 int Master::Run()
 {
+    OpenSSLCrypto::threadsSetup();
     BigNumber seed1;
     seed1.SetRand(16 * 8);
 
     TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "%s (worldserver-daemon)", _FULLVERSION);
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "<Ctrl-C> to stop.\n");
 
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " A World of Warcraft: Woltk Core Emulator	");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "       _/_/   _/         _/_/_/_/ ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "    _/    _/ _/_/_/_/   _/        ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "   _/    _/ _/      _/ _/_/_/     ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "  _/    _/ _/      _/ _/          ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "   _/_/   _/      _/ _/_/_/_/ 	 ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "                         C O R E  ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " https://github.com/ApocalypseCore ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " ApocalypseEmu Community developers(c) 2013 ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " Desarrollado por ApocalypseEmu basado en TrinityCore y MaNGOS Two ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " https://ApocalypseCore.tk/ ");
-    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " Presione <Ctrl-C> para detenerlo.\n");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, " ______                       __");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "/\\__  _\\       __          __/\\ \\__");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "\\/_/\\ \\/ _ __ /\\_\\    ___ /\\_\\ \\, _\\  __  __");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "   \\ \\ \\/\\`'__\\/\\ \\ /' _ `\\/\\ \\ \\ \\/ /\\ \\/\\ \\");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "    \\ \\ \\ \\ \\/ \\ \\ \\/\\ \\/\\ \\ \\ \\ \\ \\_\\ \\ \\_\\ \\");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "     \\ \\_\\ \\_\\  \\ \\_\\ \\_\\ \\_\\ \\_\\ \\__\\\\/`____ \\");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "      \\/_/\\/_/   \\/_/\\/_/\\/_/\\/_/\\/__/ `/___/> \\");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "                                 C O R E  /\\___/");
+    TC_LOG_INFO(LOG_FILTER_WORLDSERVER, "http://TrinityCore.org                    \\/__/\n");
 
     /// worldserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
@@ -371,6 +370,7 @@ int Master::Run()
     // fixes a memory leak related to detaching threads from the module
     //UnloadScriptingModule();
 
+    OpenSSLCrypto::threadsCleanup();
     // Exit the process with specified return value
     return World::GetExitCode();
 }

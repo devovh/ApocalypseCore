@@ -234,14 +234,8 @@ i_scriptLock(false)
         }
     }
 
-    for (std::map<uint32, DynamicLOSObject*>::iterator i = m_dynamicLOSObjects.begin(); i != m_dynamicLOSObjects.end(); ++i)
-         delete i->second;
-	
-	
     //lets initialize visibility distance for map
     Map::InitVisibilityDistance();
-	
-	m_dynamicLOSCounter = 0;
 
     sScriptMgr->OnCreateMap(this);
 }
@@ -425,36 +419,9 @@ bool Map::AddPlayerToMap(Player* player)
 
     player->m_clientGUIDs.clear();
     player->UpdateObjectVisibility(false);
-	
-    if (Instanceable())
-        SendInitTransportsInInstance(player);
-  	
+
     sScriptMgr->OnPlayerEnterMap(this, player);
     return true;
-}
-
-void Map::SendInitTransportsInInstance(Player* player)
-{
-    MapManager::TransportMap& tmap = sMapMgr->m_TransportsByInstanceIdMap;
- 
-    if (tmap.find(player->GetInstanceId()) == tmap.end())
-        return;
- 
-    UpdateData transData;
- 
-    MapManager::TransportSet& tset = tmap[player->GetInstanceId()];
- 
-    for (MapManager::TransportSet::const_iterator i = tset.begin(); i != tset.end(); ++i)
-    {
-        if ((*i) != player->GetTransport() && (*i)->GetInstanceId() == GetInstanceId())
-        {
-            (*i)->BuildCreateUpdateBlockForPlayer(&transData, player);
-        }
-    }
- 
-    WorldPacket packet;
-    transData.BuildPacket(&packet);
-    player->GetSession()->SendPacket(&packet);
 }
 
 template<class T>
@@ -729,7 +696,7 @@ void Map::RemoveFromMap(T *obj, bool remove)
 
     obj->UpdateObjectVisibility(true);
     obj->RemoveFromGrid();
-// gunship data
+
     obj->ResetMap();
 
     if (remove)
@@ -853,6 +820,8 @@ void Map::MoveAllCreaturesInMoveList()
         {
             // update pos
             c->Relocate(c->_newPosition);
+            if (c->IsVehicle())
+                c->GetVehicleKit()->RelocatePassengers();
             //CreatureRelocationNotify(c, new_cell, new_cell.cellCoord());
             c->UpdateObjectVisibility(false);
         }
@@ -1707,25 +1676,7 @@ float Map::GetHeight(float x, float y, float z, bool checkVMap /*= true*/, float
             return vmapHeight;                              // we have only vmapHeight (if have)
     }
 
-else  
-
-    {  
-
-        if (!checkVMap)  
-
-            return mapHeight;                               // explicitly use map data (if have)  
-
-        else if (mapHeight > INVALID_HEIGHT && (z < mapHeight + 2 || z == MAX_HEIGHT))  
-
-            return mapHeight;                               // explicitly use map data if original z < mapHeight but map found (z+2 > mapHeight)  
-
-        else  
-
-            return VMAP_INVALID_HEIGHT_VALUE;               // we not have any height  
-
-    }  
-
-    //return mapHeight;                                // explicitly use map data
+    return mapHeight;                               // explicitly use map data
 }
 
 inline bool IsOutdoorWMO(uint32 mogpFlags, int32 /*adtId*/, int32 /*rootId*/, int32 /*groupId*/, WMOAreaTableEntry const* wmoEntry, AreaTableEntry const* atEntry)
@@ -2163,6 +2114,10 @@ void Map::AddObjectToRemoveList(WorldObject* obj)
 void Map::AddObjectToSwitchList(WorldObject* obj, bool on)
 {
     ASSERT(obj->GetMapId() == GetId() && obj->GetInstanceId() == GetInstanceId());
+    // i_objectsToSwitch is iterated only in Map::RemoveAllObjectsInRemoveList() and it uses
+    // the contained objects only if GetTypeId() == TYPEID_UNIT , so we can return in all other cases
+    if (obj->GetTypeId() != TYPEID_UNIT)
+        return;
 
     std::map<WorldObject*, bool>::iterator itr = i_objectsToSwitch.find(obj);
     if (itr == i_objectsToSwitch.end())
@@ -2434,7 +2389,7 @@ bool InstanceMap::AddPlayerToMap(Player* player)
         // Check moved to void WorldSession::HandleMoveWorldportAckOpcode()
         //if (!CanEnter(player))
             //return false;
-		
+
         // Dungeon only code
         if (IsDungeon())
         {
@@ -2459,7 +2414,7 @@ bool InstanceMap::AddPlayerToMap(Player* player)
                 // cannot enter other instances if bound permanently
                 if (playerBind->save != mapSave)
                 {
-                    TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: player %s(%d) is permanently bound to instance %d, %d, %d, %d, %d, %d but he is being put into instance %d, %d, %d, %d, %d, %d", player->GetName().c_str(), player->GetGUIDLow(), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset());
+                    TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: player %s(%d) is permanently bound to instance %s %d, %d, %d, %d, %d, %d but he is being put into instance %s %d, %d, %d, %d, %d, %d", player->GetName().c_str(), player->GetGUIDLow(), GetMapName(), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset(), GetMapName(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset());
                     return false;
                 }
             }
@@ -2471,9 +2426,9 @@ bool InstanceMap::AddPlayerToMap(Player* player)
                     InstanceGroupBind* groupBind = group->GetBoundInstance(this);
                     if (playerBind && playerBind->save != mapSave)
                     {
-                        TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: player %s(%d) is being put into instance %d, %d, %d, %d, %d, %d but he is in group %d and is bound to instance %d, %d, %d, %d, %d, %d!", player->GetName().c_str(), player->GetGUIDLow(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset(), GUID_LOPART(group->GetLeaderGUID()), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset());
+                        TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: player %s(%d) is being put into instance %s %d, %d, %d, %d, %d, %d but he is in group %d and is bound to instance %d, %d, %d, %d, %d, %d!", player->GetName().c_str(), player->GetGUIDLow(), GetMapName(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset(), GUID_LOPART(group->GetLeaderGUID()), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset());
                         if (groupBind)
-                            TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: the group is bound to the instance %d, %d, %d, %d, %d, %d", groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty(), groupBind->save->GetPlayerCount(), groupBind->save->GetGroupCount(), groupBind->save->CanReset());
+                            TC_LOG_ERROR(LOG_FILTER_MAPS, "InstanceMap::Add: the group is bound to the instance %s %d, %d, %d, %d, %d, %d", GetMapName(), groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty(), groupBind->save->GetPlayerCount(), groupBind->save->GetGroupCount(), groupBind->save->CanReset());
                         //ASSERT(false);
                         return false;
                     }
@@ -2959,149 +2914,3 @@ time_t Map::GetLinkedRespawnTime(uint64 guid) const
     return time_t(0);
 }
 
-/*
- * ****************** *
- * DYNAMIC LOS SYSTEM *
- * ****************** *
- */
-uint32 Map::AddDynLOSObject(float x, float y, float radius)
-{
-    DynamicLOSObject* obj = new DynamicLOSObject();
-    obj->SetCoordinates(x, y);
-    obj->SetRadius(radius);
-
-    // Add the dynamic object to the map
-    m_dynamicLOSObjects[++m_dynamicLOSCounter] = obj;
-
-    return m_dynamicLOSCounter;
-}
-
-uint32 Map::AddDynLOSObject(float x, float y, float z, float radius, float height)
-{
-    DynamicLOSObject* obj = new DynamicLOSObject();
-    obj->SetCoordinates(x, y);
-    obj->SetZ(z);
-    obj->SetHeight(height);
-    obj->SetRadius(radius);
-
-    // Add the dynamic object to the map
-    m_dynamicLOSObjects[++m_dynamicLOSCounter] = obj;
-
-    return m_dynamicLOSCounter;
-}
-
-void Map::SetDynLOSObjectState(uint32 id, bool state)
-{
-    std::map<uint32, DynamicLOSObject*>::iterator iter = m_dynamicLOSObjects.find(id);
-    if (iter != m_dynamicLOSObjects.end())
-        iter->second->SetActiveState(state);
-}
-
-bool Map::GetDynLOSObjectState(uint32 id)
-{
-    std::map<uint32, DynamicLOSObject*>::iterator iter = m_dynamicLOSObjects.find(id);
-    if (iter != m_dynamicLOSObjects.end())
-        return (iter->second->IsActive());
-    return false;
-}
-
-bool Map::IsInDynLOS(float x, float y, float z, float x2, float y2, float z2)
-{
-    if (!m_dynamicLOSCounter)
-        return true;
-
-    for (std::map<uint32, DynamicLOSObject*>::iterator iter = m_dynamicLOSObjects.begin(); iter != m_dynamicLOSObjects.end(); ++iter)
-        if (iter->second->IsActive() && iter->second->IsBetween(x, y, z, x2, y2, z2))
-            return false;
-
-    return true;
-}
-
-DynamicLOSObject::DynamicLOSObject()
-{
-    _x = 0.0f;
-    _y = 0.0f;
-    _z = 0.0f;
-    _height = 0.0f;
-    _radius = 0.0f;
-    _active = false;
-}
-
-bool DynamicLOSObject::IsBetween(float x, float y, float z, float x2, float y2, float z2)
-{
-    if (IsInside(x, y) || IsInside(x2, y2))
-    {
-        if(HasHeightInfo() && IsOverOrUnder(z2))
-            return false;
-
-        return true;
-    }
-
-    // For a real handling of Z coord is necessary to do some research from this point
-    // i.e. A player over a huge round plattaform, placed near the edge; and other player placed  down the plattaform at the oposing extreme just next to the edge; 
-    // both may be able to attack each other, even when the plattaform height should prevent that.
-    if ((std::max(x, x2) < (_x - _radius))
-        || (std::min(x, x2) > (_x + _radius))
-        || (std::max(y, y2) < (_y - _radius))
-        || (std::min(y, y2) > (_y + _radius)))
-        return false;
-
-    float angleToMe = atan2(_x - x, _y - y);
-    angleToMe = (angleToMe >= 0) ? angleToMe : 2 * M_PI + angleToMe;
-
-    float angleToDest = atan2(x2 - x, y2 - y);
-    angleToDest = (angleToDest >= 0) ? angleToDest : 2 * M_PI + angleToDest;
-
-    return (fabs(sin(angleToMe - angleToDest)) * GetDistance(x, y) < _radius);
-}
-
-bool DynamicLOSObject::IsInside(float x, float y)
-{
-    return (((x-_x)*(x-_x)+(y-_y)*(y-_y))<(_radius*_radius));
-}
-
-bool DynamicLOSObject::IsOverOrUnder(float z)
-{
-    return ((z < _z+_height) && (z > _z));
-}
-
-float DynamicLOSObject::GetDistance(float x, float y)
-{
-    return sqrtf((x-_x)*(x-_x)+(y-_y)*(y-_y));
-}
-
-bool DynamicLOSObject::IsActive()
-{
-    return _active;
-}
-
-void DynamicLOSObject::SetActiveState(bool state)
-{
-    _active = state;
-}
-
-void DynamicLOSObject::SetCoordinates(float x, float y)
-{
-    _x = x;
-    _y = y;
-}
-
-void DynamicLOSObject::SetRadius(float r)
-{
-    _radius = r;
-}
-
-void DynamicLOSObject::SetZ(float z)
-{
-    _z = z;
-}
-
-void DynamicLOSObject::SetHeight(float h)
-{
-    _height = h;
-}
-
-bool DynamicLOSObject::HasHeightInfo()
-{
-    return (_z != 0 || _height != 0);
-}

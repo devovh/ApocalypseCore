@@ -27,12 +27,9 @@ Script Data End */
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "CreatureTextMgr.h"
 #include "utgarde_pinnacle.h"
 #include "Player.h"
 #include "SpellInfo.h"
-
-#define SPELL_POISONED_SPEAR    DUNGEON_MODE(50255, 59331)
 
 enum Yells
 {
@@ -136,7 +133,8 @@ enum Spells
 {
     // Skadi Spells
     SPELL_CRUSH             = 50234,
-    SPELL_WHIRLWIND         = 50228,
+    SPELL_POISONED_SPEAR    = 50225, //isn't being casted =/
+    SPELL_WHIRLWIND         = 50228, //random target, but not the tank approx. every 20s
     SPELL_RAPID_FIRE        = 56570,
     SPELL_HARPOON_DAMAGE    = 56578,
     SPELL_FREEZING_CLOUD    = 47579,
@@ -208,49 +206,22 @@ public:
 
             Summons.DespawnAll();
             me->SetSpeed(MOVE_FLIGHT, 3.0f);
+            if ((Unit::GetCreature(*me, m_uiGraufGUID) == NULL) && !me->IsMounted())
+                 me->SummonCreature(NPC_GRAUF, Location[0].GetPositionX(), Location[0].GetPositionY(), Location[0].GetPositionZ(), 3.0f);
             if (instance)
             {
-				if (!me->IsMounted())
-				{
-					me->SetCanFly(false);
-					me->SetUnitMovementFlags(MOVEMENTFLAG_WALKING);
-
-					if (Creature* grauf = me->GetMap()->GetCreature(instance->GetData64(DATA_NPC_GRAUF)))
-					{
-						if (!grauf->IsAlive())
-							grauf->Respawn(true);
-					}
-					else
-						me->SummonCreature(NPC_GRAUF, Location[0].GetPositionX(), Location[0].GetPositionY(), Location[0].GetPositionZ(), 3.0f);
-				}
                 instance->SetData(DATA_SKADI_THE_RUTHLESS_EVENT, NOT_STARTED);
                 instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT);
             }
         }
-		
-		void DamageTaken(Unit* /*attacker*/, uint32 & damage)
-		{
-			if (!me->IsInCombat() || Phase != SKADI || me->IsMounted())
-				damage = 0;
-		}
 
         void JustReachedHome() OVERRIDE
         {
             me->SetCanFly(false);
             me->Dismount();
-            me->SetUnitMovementFlags(MOVEMENTFLAG_WALKING);
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
-
-			if (instance)
-			{
-				if (Creature* grauf = me->GetMap()->GetCreature(instance->GetData64(DATA_NPC_GRAUF)))
-				{
-					if (!grauf->IsAlive())
-						grauf->Respawn(true);
-				}
-				else
-					me->SummonCreature(NPC_GRAUF, Location[0].GetPositionX(), Location[0].GetPositionY(), Location[0].GetPositionZ(), 3.0f);
-			}
+            if (!Unit::GetCreature(*me, m_uiGraufGUID))
+                me->SummonCreature(NPC_GRAUF, Location[0].GetPositionX(), Location[0].GetPositionY(), Location[0].GetPositionZ(), 3.0f);
         }
 
         void EnterCombat(Unit* /*who*/) OVERRIDE
@@ -288,7 +259,6 @@ public:
                     summoned->setActive(true);
                     summoned->SetInCombatWithZone();
                     if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0))
-                    if (summoned->IsWithinDistInMap(target, 30.0f))
                         summoned->AI()->AttackStart(target);
                     break;
                 case NPC_TRIGGER:
@@ -311,31 +281,23 @@ public:
             if (spell->Id == SPELL_HARPOON_DAMAGE)
             {
                 m_uiSpellHitCount++;
-                if (m_uiSpellHitCount >= 5)
+                if (m_uiSpellHitCount >= 3)
                 {
                     Phase = SKADI;
+                    me->SetCanFly(false);
                     me->Dismount();
-					me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
-					me->RemoveUnitMovementFlag(MOVEMENTFLAG_CAN_FLY | MOVEMENTFLAG_FLYING);
-
                     if (Creature* pGrauf = me->SummonCreature(NPC_GRAUF, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), 0, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3*IN_MILLISECONDS))
                     {
                         pGrauf->GetMotionMaster()->MoveFall();
                         pGrauf->HandleEmoteCommand(EMOTE_ONESHOT_FLYDEATH);
-                        pGrauf->AI()->Talk(SAY_DRAKE_DEATH);
                     }
-					me->SetCanFly(false);
                     me->GetMotionMaster()->MoveJump(Location[4].GetPositionX(), Location[4].GetPositionY(), Location[4].GetPositionZ(), 5.0f, 10.0f);
-					me->SetHealth(me->GetMaxHealth());
-					me->SetUnitMovementFlags(MOVEMENTFLAG_WALKING);
-					me->UpdateObjectVisibility(true);
-
-					if (Unit* target = me->SelectNearestPlayer())
-						AttackStart(target);
-
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
+                    Talk(SAY_DRAKE_DEATH);
                     m_uiCrushTimer = 8000;
                     m_uiPoisonedSpearTimer = 10000;
                     m_uiWhirlwindTimer = 20000;
+                    me->AI()->AttackStart(SelectTarget(SELECT_TARGET_RANDOM));
                 }
             }
         }
@@ -348,23 +310,12 @@ public:
                     if (!UpdateVictim())
                         return;
 
-					if (Creature* pGrauf = me->GetMap()->GetCreature(instance->GetData64(DATA_NPC_GRAUF)))
-					{
-						pGrauf->SetCanFly(true);
-						pGrauf->SetUnitMovementFlags(MOVEMENTFLAG_CAN_FLY);
-						pGrauf->AddUnitMovementFlag(MOVEMENTFLAG_FLYING);
-					}
-
-					me->SetCanFly(true);
-					me->SetUnitMovementFlags(MOVEMENTFLAG_CAN_FLY);
-					me->AddUnitMovementFlag(MOVEMENTFLAG_FLYING);
-
                     if (me->GetPositionX() >= 519)
                     {
                         me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_NON_ATTACKABLE);
                         if (!m_bSaidEmote)
                         {
-							sCreatureTextMgr->SendChat(me, EMOTE_RANGE, 0, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_MAP);
+                            Talk(EMOTE_RANGE);
                             m_bSaidEmote = true;
                         }
                     }
@@ -377,6 +328,7 @@ public:
                     if (m_uiMountTimer && m_uiMountTimer <= diff)
                     {
                         me->Mount(DATA_MOUNT);
+                        me->SetCanFly(true);
                         m_uiMountTimer = 0;
                     } else m_uiMountTimer -= diff;
 
@@ -405,8 +357,7 @@ public:
                             case 3:
                                 me->GetMotionMaster()->MovePoint(0, Location[69].GetPositionX(), Location[69].GetPositionY(), Location[69].GetPositionZ());
                                 Talk(SAY_DRAKE_BREATH);
-								if (Creature* pGrauf = me->GetMap()->GetCreature(instance->GetData64(DATA_NPC_GRAUF)))
-									sCreatureTextMgr->SendChat(pGrauf, EMOTE_BREATH, 0, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_MAP);
+                                Talk(EMOTE_BREATH);
                                 m_uiMovementTimer = 2500;
                                 break;
                             case 4:
@@ -506,13 +457,8 @@ public:
                 default:
                     break;
             }
-			
-			for (uint32 i = iStart; i < iEnd; ++i)
-				if (Creature* creature = me->SummonCreature(NPC_TRIGGER, Location[i], TEMPSUMMON_TIMED_DESPAWN, 5 * IN_MILLISECONDS))
-				{
-					creature->SetVisible(false);
-					creature->setFaction(35);
-				}
+            for (uint32 i = iStart; i < iEnd; ++i)
+                me->SummonCreature(NPC_TRIGGER, Location[i]);
         }
     };
 

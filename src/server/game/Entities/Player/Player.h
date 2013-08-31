@@ -169,6 +169,7 @@ enum ReputationSource
     REPUTATION_SOURCE_DAILY_QUEST,
     REPUTATION_SOURCE_WEEKLY_QUEST,
     REPUTATION_SOURCE_MONTHLY_QUEST,
+    REPUTATION_SOURCE_REPEATABLE_QUEST,
     REPUTATION_SOURCE_SPELL
 };
 
@@ -1077,9 +1078,7 @@ class Player : public Unit, public GridObject<Player>
             SetFloatValue(UNIT_FIELD_BOUNDINGRADIUS, scale * DEFAULT_WORLD_OBJECT_SIZE);
             SetFloatValue(UNIT_FIELD_COMBATREACH, scale * DEFAULT_COMBAT_REACH);
         }
-		
-        void KnockBackWithAngle(float angle, float horizontalSpeed, float verticalSpeed);
-		
+
         bool TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options = 0);
         bool TeleportTo(WorldLocation const &loc, uint32 options = 0);
         bool TeleportToBGEntryPoint();
@@ -1415,9 +1414,9 @@ class Player : public Unit, public GridObject<Player>
         void ItemAddedQuestCheck(uint32 entry, uint32 count);
         void ItemRemovedQuestCheck(uint32 entry, uint32 count);
         void KilledMonster(CreatureTemplate const* cInfo, uint64 guid);
-        void KilledMonsterCredit(uint32 entry, uint64 guid);
+        void KilledMonsterCredit(uint32 entry, uint64 guid = 0);
         void KilledPlayerCredit();
-        void CastedCreatureOrGO(uint32 entry, uint64 guid, uint32 spell_id);
+        void KillCreditGO(uint32 entry, uint64 guid = 0);
         void TalkedToCreature(uint32 entry, uint64 guid);
         void MoneyChanged(uint32 value);
         void ReputationChanged(FactionEntry const* factionEntry);
@@ -1740,6 +1739,7 @@ class Player : public Unit, public GridObject<Player>
 
         bool UpdateStats(Stats stat);
         bool UpdateAllStats();
+        void ApplySpellPenetrationBonus(int32 amount, bool apply);
         void UpdateResistances(uint32 school);
         void UpdateArmor();
         void UpdateMaxHealth();

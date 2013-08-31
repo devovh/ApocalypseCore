@@ -1,35 +1,3 @@
-NOTA PARA LOS USUARIOS CON errores de compilación:
-
-Antes de comentar en nuestro IssueTracker que "no se puede compilar", les pedimos hacer lo siguiente:
-
-* Borrar la caché del CMake
-
-   En algunos casos, nos adaptamos y modificamos el sistema de construcción (añadir / eliminar
-   funciones / funcionalidad)
-
-* Eliminar / borrar y volver a crear el directorio de compilación y recompilación
-
-   En la mayoría de los casos ningún enlace-error están relacionados con la acumulación del
-   sistema que no ha alcanzado a los cambios específicos.
-
-* Compilar en un sourcetree LIMPIO
-
-   No podemos, por razones obvias, Cores de apoyo que ha sido modificados.
-   Como se puede entender, no somos videntes: no somos conscientes de lo que
-   ha hecho para su sourcetree, y como tal: No podemos ver lo que su
-   código adicional.
-
-* Fuente de LOGS adecuada sobre errores de compilación
-
-   Esto significa: Agregar tanta información como sea posible a la cuestión, incluida el
-   registro completo de la propia compilación (o por lo menos, las 20 líneas
-   por encima y debajo de la misma compilación del error).
-
-Feliz compilación y tengan un buen día!
-
-- Los desarrolladores TrinityCore
-
-
 NOTE TO USERS WITH COMPILE-ERRORS :
 
 Before commenting on our issuetracker that "it doesn't compile", we ask you

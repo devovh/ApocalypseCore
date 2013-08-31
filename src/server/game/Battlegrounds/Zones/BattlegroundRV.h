@@ -91,11 +91,6 @@ enum BattlegroundRVData
     BG_RV_WORLD_STATE                            = 0xe1a
 };
 
-#define BG_RV_PILLAR_SMALL_RADIUS  2.0f
-#define BG_RV_PILLAR_SMALL_HEIGHT  5.0f
-#define BG_RV_PILLAR_BIG_RADIUS    4.0f
-#define BG_RV_PILLAR_BIG_HEIGHT    8.25f
-
 class BattlegroundRV : public Battleground
 {
     public:
@@ -113,7 +108,6 @@ class BattlegroundRV : public Battleground
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         bool SetupBattleground();
         void HandleKillPlayer(Player* player, Player* killer);
-		bool HandlePlayerUnderMap(Player* player);
 
     private:
         uint32 Timer;
@@ -121,10 +115,8 @@ class BattlegroundRV : public Battleground
         bool   PillarCollision;
 
         void PostUpdateImpl(uint32 diff);
-		virtual void SwitchDynLos();		
 
     protected:
-	    uint32 m_DynLos[4];	
         uint32 getTimer() { return Timer; }
         void setTimer(uint32 timer) { Timer = timer; }
 

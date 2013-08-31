@@ -27,7 +27,6 @@
 #include "Chat.h"
 #include "Spell.h"
 #include "BattlegroundMgr.h"
-#include "CreatureAI.h"
 #include "MapManager.h"
 #include "BattlefieldWG.h"
 #include "BattlefieldMgr.h"
@@ -1236,7 +1235,7 @@ void SpellMgr::LoadSpellTalentRanks()
             node.rank  = rank + 1;
 
             node.prev = prevSpell;
-            node.next = node.rank < MAX_TALENT_RANK ? GetSpellInfo(talentInfo->RankID[rank + 1]) : NULL;
+            node.next = node.rank < MAX_TALENT_RANK ? GetSpellInfo(talentInfo->RankID[node.rank]) : NULL;
 
             mSpellChains[spellId] = node;
             mSpellInfoMap[spellId]->ChainEntry = &mSpellChains[spellId];
@@ -2782,6 +2781,9 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                     {
                         uint32 enchantId = spellInfo->Effects[j].MiscValue;
                         SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchantId);
+                        if (!enchant)
+                            break;
+
                         for (uint8 s = 0; s < MAX_ITEM_ENCHANTMENT_EFFECTS; ++s)
                         {
                             if (enchant->type[s] != ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL)
@@ -2972,6 +2974,9 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
             case 72293: // Mark of the Fallen Champion (Deathbringer Saurfang)
                 spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE_EFF0;
                 break;
+            case 38729: // Rod of Purification
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_TRIGGERED_BY_CASTER;
+                break;
             default:
                 break;
         }
@@ -2994,8 +2999,6 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
 
         spellInfo->_InitializeExplicitTargetMask();
     }
-
-    CreatureAI::FillAISpellInfo();
 
     TC_LOG_INFO(LOG_FILTER_SERVER_LOADING, ">> Loaded SpellInfo custom attributes in %u ms", GetMSTimeDiffToNow(oldMSTime));
 }
@@ -3051,19 +3054,6 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 42835: // Spout, remove damage effect, only anim is needed
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
-				case SPELLFAMILY_PRIEST:
-					// Twin Disciplines ahora es afectado a Prayer of Mending
-					if (spellInfo->SpellIconID == 2292)
-						spellInfo->Effects[EFFECT_0].SpellClassMask[1] |= 0x20000000;
-					// Spiritual Healing ahora es afectado a Prayer of Mending
-					else if (spellInfo->SpellIconID == 46)
-						spellInfo->Effects[EFFECT_0].SpellClassMask[1] |= 0x20000000;
-					// Divine Providence ahora es afectado a Prayer of Mending
-					else if (spellInfo->SpellIconID == 2845 && spellInfo->Id != 64844)
-						spellInfo->Effects[EFFECT_0].SpellClassMask[1] |= 0x20000000;
-					else
-						break;
-					break;
             case 30657: // Quake
                 spellInfo->Effects[EFFECT_0].TriggerSpell = 30571;
                 break;
@@ -3115,6 +3105,17 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 63320: // Glyph of Life Tap
                 // Entries were not updated after spell effect change, we have to do that manually :/
                 spellInfo->AttributesEx3 |= SPELL_ATTR3_CAN_PROC_WITH_TRIGGERED;
+                break;
+            case 5308:  // Execute (Rank 1)
+            case 20658: // Execute (Rank 2)
+            case 20660: // Execute (Rank 3)
+            case 20661: // Execute (Rank 4)
+            case 20662: // Execute (Rank 5)
+            case 25234: // Execute (Rank 6)
+            case 25236: // Execute (Rank 7)
+            case 47470: // Execute (Rank 8)
+            case 47471: // Execute (Rank 9)
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_CANT_TRIGGER_PROC;
                 break;
             case 59725: // Improved Spell Reflection - aoe aura
                 // Target entry seems to be wrong for this spell :/
@@ -3206,10 +3207,6 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 34477: // Misdirection
             case 44401: // Missile Barrage
                 spellInfo->ProcCharges = 1;
-                break;
-            case 53257: // Cobra Strikes
-                spellInfo->ProcCharges = 2;
-                spellInfo->StackAmount = 0;
                 break;
             case 44544: // Fingers of Frost
                 spellInfo->Effects[EFFECT_0].SpellClassMask = flag96(685904631, 1151048, 0);
@@ -3377,10 +3374,6 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 53313: // Entangling Roots (Rank 8) -- Nature's Grasp Proc
                 spellInfo->CastTimeEntry = sSpellCastTimesStore.LookupEntry(1);
                 break;
-            case 59414: // Pulsing Shockwave Aura (Loken)
-                // this flag breaks movement, remove it
-                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
-                break;
             case 61719: // Easter Lay Noblegarden Egg Aura - Interrupt flags copied from aura which this aura is linked with
                 spellInfo->AuraInterruptFlags = AURA_INTERRUPT_FLAG_HITBYSPELL | AURA_INTERRUPT_FLAG_TAKE_DAMAGE;
                 break;
@@ -3488,7 +3481,7 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 70859: // Upper Spire Teleport
             case 70860: // Frozen Throne Teleport
             case 70861: // Sindragosa's Lair Teleport
-                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(85);
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_DB);
                 break;
             case 69055: // Bone Slice (Lord Marrowgar)
             case 70814: // Bone Slice (Lord Marrowgar)
@@ -3686,11 +3679,6 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 72405: // Broken Frostmourne
                 spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_200_YARDS); // 200yd
                 break;
-            case 68645: // Rocket Pack! Hack untill movejump will be implemented properly.
-                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_KNOCK_BACK_DEST;  // Gunship rocket pack
-                spellInfo->Effects[EFFECT_0].MiscValue |= -250;                      
-                spellInfo->Effects[EFFECT_0].BasePoints = 150;
-                break;	
             // ENDOF ICECROWN CITADEL SPELLS
             //
             // RUBY SANCTUM SPELLS
@@ -3753,9 +3741,6 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->ManaCost = 0;
                 spellInfo->ManaPerSecond = 0;
                 break;
-			case 42793: // Burn Body (Quest: War Is Hell!)
-				spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);;
-				spellInfo->Effects[EFFECT_2].MiscValue |= 24008;
             case 24314: // Threatening Gaze
                 spellInfo->AuraInterruptFlags |= AURA_INTERRUPT_FLAG_CAST | AURA_INTERRUPT_FLAG_MOVE | AURA_INTERRUPT_FLAG_JUMP;
                 break;
@@ -3784,10 +3769,10 @@ void SpellMgr::LoadSpellInfoCorrections()
         }
     }
 
-    SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(121));
-    properties->Type = SUMMON_TYPE_TOTEM;
-    properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(647)); // 52893
-    properties->Type = SUMMON_TYPE_TOTEM;
+    if (SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(121)))
+        properties->Type = SUMMON_TYPE_TOTEM;
+    if (SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(647))) // 52893
+        properties->Type = SUMMON_TYPE_TOTEM;
 
     TC_LOG_INFO(LOG_FILTER_SERVER_LOADING, ">> Loaded SpellInfo corrections in %u ms", GetMSTimeDiffToNow(oldMSTime));
 }

@@ -30,6 +30,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "Cryptography/BigNumber.h"
+#include "AccountMgr.h"
 
 class Creature;
 class GameObject;
@@ -191,7 +192,7 @@ class CharacterCreateInfo
 class WorldSession
 {
     public:
-        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, bool ispremium, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
+        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
         ~WorldSession();
 
         bool PlayerLoading() const { return m_playerLoading; }
@@ -223,7 +224,6 @@ class WorldSession
         void InvalidateRBACData(); // Used to force LoadPermissions at next HasPermission check
 
         AccountTypes GetSecurity() const { return _security; }
-        bool IsPremium() const { return _ispremium; }
         uint32 GetAccountId() const { return _accountId; }
         Player* GetPlayer() const { return _player; }
         std::string const& GetPlayerName() const;
@@ -315,7 +315,6 @@ class WorldSession
             }
         }
         //used with item_page table
-		static void SendExternalMails();
         bool SendItemInfo(uint32 itemid, WorldPacket data);
         //auction
         void SendAuctionHello(uint64 guid, Creature* unit);
@@ -913,6 +912,40 @@ class WorldSession
         QueryCallback<PreparedQueryResult, CharacterCreateInfo*, true> _charCreateCallback;
         QueryResultHolderFuture _charLoginCallback;
 
+    friend class World;
+    protected:
+        class DosProtection
+        {
+            friend class World;
+            public:
+                DosProtection(WorldSession* s) : Session(s), _policy((Policy)sWorld->getIntConfig(CONFIG_PACKET_SPOOF_POLICY)) {}
+                bool EvaluateOpcode(WorldPacket& p) const;
+                void AllowOpcode(uint16 opcode, bool allow) { _isOpcodeAllowed[opcode] = allow; }
+            protected:
+                enum Policy
+                {
+                    POLICY_LOG,
+                    POLICY_KICK,
+                    POLICY_BAN,
+                };
+
+                bool IsOpcodeAllowed(uint16 opcode) const
+                {
+                    OpcodeStatusMap::const_iterator itr = _isOpcodeAllowed.find(opcode);
+                    if (itr == _isOpcodeAllowed.end())
+                        return true;    // No presence in the map indicates this is the first time the opcode was sent this session, so allow
+
+                    return itr->second;
+                }
+
+                WorldSession* Session;
+
+            private:
+                typedef UNORDERED_MAP<uint16, bool> OpcodeStatusMap;
+                OpcodeStatusMap _isOpcodeAllowed; // could be bool array, but wouldn't be practical for game versions with non-linear opcodes
+                Policy _policy;
+        } AntiDOS;
+
     private:
         // private trade methods
         void moveItems(Item* myItems[], Item* hisItems[]);
@@ -939,7 +972,6 @@ class WorldSession
         AccountTypes _security;
         uint32 _accountId;
         uint8 m_expansion;
-        bool _ispremium;
 
         typedef std::list<AddonInfo> AddonsList;
 

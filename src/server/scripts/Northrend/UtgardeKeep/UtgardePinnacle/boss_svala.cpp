@@ -282,8 +282,6 @@ public:
                             arthas->CastSpell(me, SPELL_TRANSFORMING_CHANNEL, false);
                             pos.Relocate(me);
                             pos.m_positionZ += 8.0f;
-							me->SetCanFly(true);
-							me->SetDisableGravity(true);
                             me->GetMotionMaster()->MoveTakeoff(0, pos);
                             // spectators flee event
                             if (instance)
@@ -350,9 +348,6 @@ public:
                             if (GameObject* mirror = GetClosestGameObjectWithEntry(me, GO_UTGARDE_MIRROR, 100.0f))
                                 mirror->SetGoState(GO_STATE_ACTIVE);
                             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            me->SetCanFly(false);
-                            me->SetDisableGravity(false);
-                            me->SetHover(false);
                             arthas->DespawnOrUnsummon();
                             arthasGUID = 0;
                             Phase = NORMAL;

@@ -35,7 +35,6 @@ enum Texts
     SAY_LK_INTRO_1                  = 0,
     SAY_LK_INTRO_2                  = 1,
     SAY_LK_INTRO_3                  = 2,
-    SAY_LK_AGGRO                    = 3,
     SAY_LK_REMORSELESS_WINTER       = 4,
     SAY_LK_QUAKE                    = 5,
     SAY_LK_SUMMON_VALKYR            = 6,
@@ -60,7 +59,6 @@ enum Texts
     SAY_TIRION_INTRO_2              = 1,
     SAY_TIRION_OUTRO_1              = 2,
     SAY_TIRION_OUTRO_2              = 3,
-    SAY_TIRION_OUTRO_3              = 4,
 
     // Terenas Menethil (outro)
     SAY_TERENAS_OUTRO_1             = 0,
@@ -540,7 +538,6 @@ class boss_the_lich_king : public CreatureScript
 
                 me->setActive(true);
                 DoZoneInCombat();
-                Talk(SAY_LK_AGGRO);
 
                 events.SetPhase(PHASE_ONE);
                 events.ScheduleEvent(EVENT_SUMMON_SHAMBLING_HORROR, 20000, 0, PHASE_ONE);
@@ -1293,7 +1290,6 @@ class npc_tirion_fordring_tft : public CreatureScript
                             break;
                         case EVENT_OUTRO_JUMP:
                             DoCastAOE(SPELL_JUMP);
-                            me->GetMotionMaster()->MoveJump(529.023254f, -2124.561035f, 840.356506f, 15.0f, 17.0f);
                             break;
                         default:
                             break;
@@ -1832,10 +1828,7 @@ class npc_terenas_menethil : public CreatureScript
                                 lichKing->AI()->DoAction(ACTION_FINISH_OUTRO);
                                 lichKing->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_NPC);
                                 if (Creature* tirion = ObjectAccessor::GetCreature(*me, _instance->GetData64(DATA_HIGHLORD_TIRION_FORDRING)))
-                                {
                                     tirion->AI()->AttackStart(lichKing);
-                                    tirion->AI()->Talk(SAY_TIRION_OUTRO_3);
-                                }
                             }
                             break;
                         case EVENT_DESTROY_SOUL:
@@ -2452,12 +2445,12 @@ class spell_the_lich_king_defile : public SpellScriptLoader
 
             void CorrectRange(std::list<WorldObject*>& targets)
             {
-                targets.remove_if(ExactDistanceCheck(GetCaster(), 10.0f * GetCaster()->GetFloatValue(OBJECT_FIELD_SCALE_X)));
+                targets.remove_if(ExactDistanceCheck(GetCaster(), 10.0f * GetCaster()->GetObjectScale()));
             }
 
             void ChangeDamageAndGrow()
             {
-                SetHitDamage(int32(GetHitDamage() * GetCaster()->GetFloatValue(OBJECT_FIELD_SCALE_X)));
+                SetHitDamage(int32(GetHitDamage() * GetCaster()->GetObjectScale()));
                 // HACK: target player should cast this spell on defile
                 // however with current aura handling auras cast by different units
                 // cannot stack on the same aura object increasing the stack count

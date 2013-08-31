@@ -1,6 +1,6 @@
-#################################################
-# Apocalyse Emu World Server configuration file #
-#################################################
+################################################
+# Trinity Core World Server configuration file #
+################################################
 [worldserver]
 
 ###################################################################################################
@@ -28,8 +28,6 @@
 #    CHARACTER DELETE OPTIONS
 #    CUSTOM SERVER OPTIONS
 #    LOGGING SYSTEM SETTINGS
-#    ACCOUNT PREMIUM APOCALYPSECORE CONFIG
-#    MOVEMENT ANTICHEAT PASIVO
 #
 ###################################################################################################
 
@@ -87,13 +85,13 @@ LogsDir = ""
 #                                                                 section my.ini)
 #                     ".;/path/to/unix_socket;username;password;database" - (use Unix sockets on
 #                                                                           Unix/Linux)
-#        Default:     "127.0.0.1;3306;Apocalypse;Apocalypse;auth"       - (LoginDatabaseInfo)
-#                     "127.0.0.1;3306;Apocalypse;Apocalypse;world"      - (WorldDatabaseInfo)
-#                     "127.0.0.1;3306;Apocalypse;Apocalypse;characters" - (CharacterDatabaseInfo)
+#        Default:     "127.0.0.1;3306;trinity;trinity;auth"       - (LoginDatabaseInfo)
+#                     "127.0.0.1;3306;trinity;trinity;world"      - (WorldDatabaseInfo)
+#                     "127.0.0.1;3306;trinity;trinity;characters" - (CharacterDatabaseInfo)
 
-LoginDatabaseInfo     = "127.0.0.1;3306;Apocalypse;Apocalypse;auth"
-WorldDatabaseInfo     = "127.0.0.1;3306;Apocalypse;Apocalypse;world"
-CharacterDatabaseInfo = "127.0.0.1;3306;Apocalypse;Apocalypse;characters"
+LoginDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;auth"
+WorldDatabaseInfo     = "127.0.0.1;3306;trinity;trinity;world"
+CharacterDatabaseInfo = "127.0.0.1;3306;trinity;trinity;characters"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -1018,22 +1016,6 @@ MaxRecruitAFriendBonusDistance = 100
 MailDeliveryDelay = 3600
 
 #
-# ExternalMail
-# Enable external mail delivery from mail_external table.
-# Default: 0 (disabled)
-# 1 (enabled)
-
-ExternalMail = 0
-
-#
-# ExternalMailInterval
-# Mail delivery delay time for item sending from mail_external table, in minutes.
-# Default: 1 minute
-
-ExternalMailInterval = 1
-
-#
-#
 #    SkillChance.Prospecting
 #        Description: Allow skill increase from prospecting.
 #        Default:     0 - (Disabled)
@@ -1086,10 +1068,10 @@ BeepAtStart = 1
 #    Motd
 #        Description: Message of the Day, displayed at login.
 #                     Use '@' for a newline and be sure to escape special characters.
-#        Example:     "Welcome to John\'s Server@This server runs on Apocalypse Core."
-#        Default:     "Welcome to a Apocalypse Core server."
+#        Example:     "Welcome to John\'s Server@This server runs on Trinity Core."
+#        Default:     "Welcome to a Trinity Core server."
 
-Motd = "Welcome to a Apocalypse Core server."
+Motd = "Welcome to a Trinity Core server."
 
 #
 #    Server.LoginInfo
@@ -1097,7 +1079,7 @@ Motd = "Welcome to a Apocalypse Core server."
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 
-Server.LoginInfo = 1
+Server.LoginInfo = 0
 
 #
 #    Command.LookupMaxResults
@@ -2814,67 +2796,37 @@ Log.Async.Enable = 0
 ###################################################################################################
 
 ###################################################################################################
-# ACCOUNT PREMIUM APOCALYPSECORE CONFIG
 #
-#    Rate.XP.Kill.Premium
-#    Rate.XP.Quest.Premium
-#    Rate.XP.Explore.Premium
-#    Rate.Honor.Premium
-#        Description: Modifies the rates of VIPs.
-#        Default: 1
-
-Rate.Honor.Premium      = 1
-Rate.XP.Kill.Premium    = 1
-Rate.XP.Quest.Premium   = 1
-Rate.XP.Explore.Premium = 1
-
+# Packet Spoof Protection Settings
 #
-###################################################################################################
-
-###################################################################################################
-# MOVEMENT ANTICHEAT
+# These settings determine which action to take when harmful packet spoofing is detected.
 #
-#     Anticheat.Enable
-#        Description: Enables or disables the Anticheat System functionality
-#        Default:     1 - (Enabled)
-#                     0 - (Disabled)
+#    PacketSpoof.Policy
+#        Description: Determines the course of action when packet spoofing is detected.
+#        Values:     0 - Log only (LOG_FILTER_NETWORKIO)
+#                    1 - Log + kick
+#                    2 - Log + kick + ban
 
-Anticheat.Enable = 1
-
-#     Anticheat.ReportsForIngameWarnings
-#        Description: How many reports the player must have to notify to GameMasters ingame when he generates a new report.
-#        Default:     70
-
-Anticheat.ReportsForIngameWarnings = 70
-
-#     Anticheat.DetectionsEnabled
-#        Description: It represents which detections are enabled.
-#
-#        SPEED_HACK_DETECTION            = 1
-#        FLY_HACK_DETECTION              = 2
-#        WALK_WATER_HACK_DETECTION       = 4
-#        JUMP_HACK_DETECTION             = 8
-#        TELEPORT_PLANE_HACK_DETECTION   = 16
-#        CLIMB_HACK_DETECTION            = 32
-#
-#        Default:     31
-
-Anticheat.DetectionsEnabled = 31
-
-#     Anticheat.MaxReportsForDailyReport
-#        Description: How many reports must the player have to make a report that it is in DB for a day (not only during the player's session).
-#        Default:     70
-
-Anticheat.MaxReportsForDailyReport = 70
+PacketSpoof.Policy = 1
 
 #
-#     Anticheat.Ban
-#        Description: Make anticheat active (Ban cheaters character for 1 hour.)
-#        Default: 1 - (Enabled)
-#                 0 - (Disabled)
+#    PacketSpoof.BanMode
+#        Description: If PacketSpoof.Policy equals 2, this will determine the ban mode.
+#        Values:     0 - Ban Account
+#                    2 - Ban IP
+#        Note: Banning by character not supported for logical reasons.
 #
 
-Anticheat.Ban = 1
+PacketSpoof.BanMode = 0
+
+#
+#    PacketSpoof.BanDuration
+#        Description: Duration of the ban in seconds. Only valid if PacketSpoof.Policy is set to 2.
+#                     Set to 0 for permanent ban.
+#        Default:     86400 seconds (1 day)
+#
+
+PacketSpoof.BanDuration = 86400
 
 #
 ###################################################################################################

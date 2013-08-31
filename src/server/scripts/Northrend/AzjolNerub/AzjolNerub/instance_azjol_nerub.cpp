@@ -19,205 +19,168 @@
 #include "InstanceScript.h"
 #include "azjol_nerub.h"
 
-#define MAX_ENCOUNTER			3
-
-/* Azjol Nerub encounters:
-	0 - Krik'thir the Gatewatcher
-	1 - Hadronox
-	2 - Anub'arak
-*/
+DoorData const doorData[] =
+{
+    { GO_KRIKTHIR_DOOR,     DATA_KRIKTHIR_THE_GATEWATCHER,  DOOR_TYPE_PASSAGE,  BOUNDARY_NONE },
+    { GO_ANUBARAK_DOOR_1,   DATA_ANUBARAK,                  DOOR_TYPE_ROOM,     BOUNDARY_NONE },
+    { GO_ANUBARAK_DOOR_2,   DATA_ANUBARAK,                  DOOR_TYPE_ROOM,     BOUNDARY_NONE },
+    { GO_ANUBARAK_DOOR_3,   DATA_ANUBARAK,                  DOOR_TYPE_ROOM,     BOUNDARY_NONE },
+    { 0,                    0,                              DOOR_TYPE_ROOM,     BOUNDARY_NONE } // END
+};
 
 class instance_azjol_nerub : public InstanceMapScript
 {
     public:
-        instance_azjol_nerub() : InstanceMapScript("instance_azjol_nerub", 601) { }
+        instance_azjol_nerub() : InstanceMapScript(AzjolNerubScriptName, 601) { }
 
         struct instance_azjol_nerub_InstanceScript : public InstanceScript
         {
-            instance_azjol_nerub_InstanceScript(Map* map) : InstanceScript(map) {}
-
-            uint64 uiKrikthir;
-            uint64 uiHadronox;
-            uint64 uiAnubarak;
-            uint64 uiWatcherGashra;
-            uint64 uiWatcherSilthik;
-            uint64 uiWatcherNarjil;
-            uint64 frontDoorTriggerAGUID;
-            uint64 frontDoorTriggerBGUID; // Closer to tunnel
-            uint64 uiAnubarakDoor[3];
-
-            uint64 uiKrikthirDoor;
-
-            uint32 auiEncounter[MAX_ENCOUNTER];
-
-            void Initialize()
+            instance_azjol_nerub_InstanceScript(Map* map) : InstanceScript(map)
             {
-                memset(&auiEncounter, 0, sizeof(auiEncounter));
-                memset(&uiAnubarakDoor, 0, sizeof(uiAnubarakDoor));
+                SetBossNumber(EncounterCount);
+                LoadDoorData(doorData);
 
-                uiKrikthir = 0;
-                uiHadronox = 0;
-                uiAnubarak = 0;
-                uiWatcherGashra = 0;
-                uiWatcherSilthik = 0;
-                uiWatcherNarjil = 0;
-				frontDoorTriggerAGUID = 0;
-                frontDoorTriggerBGUID = 0;
-                uiKrikthirDoor = 0;
+                KrikthirGUID        = 0;
+                HadronoxGUID        = 0;
+                AnubarakGUID        = 0;
+                WatcherGashraGUID   = 0;
+                WatcherSilthikGUID  = 0;
+                WatcherNarjilGUID   = 0;
             }
 
-            bool IsEncounterInProgress() const
-            {
-                for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
-                    if (auiEncounter[i] == IN_PROGRESS)
-                        return true;
-
-                return false;
-            }
-
-            void OnCreatureCreate(Creature* creature)
+            void OnCreatureCreate(Creature* creature) OVERRIDE
             {
                 switch (creature->GetEntry())
                 {
-                    case 28684: uiKrikthir = creature->GetGUID(); break;
-                    case 28921: uiHadronox = creature->GetGUID(); break;
-                    case 29120: uiAnubarak = creature->GetGUID(); break;
-                    case 28730: uiWatcherGashra = creature->GetGUID(); break;
-                    case 28731: uiWatcherSilthik = creature->GetGUID(); break;
-                    case 28729: uiWatcherNarjil = creature->GetGUID(); break;
-                    case NPC_WORLD_TRIGGER_LARGE_AOI:
-                        if (creature->GetPositionX() < 500.0f)
-                            frontDoorTriggerAGUID = creature->GetGUID();
-                        else
-                            frontDoorTriggerBGUID = creature->GetGUID();
+                    case NPC_KRIKTHIR:
+                        KrikthirGUID = creature->GetGUID();
+                        break;
+                    case NPC_HADRONOX:
+                        HadronoxGUID = creature->GetGUID();
+                        break;
+                    case NPC_ANUBARAK:
+                        AnubarakGUID = creature->GetGUID();
+                        break;
+                    case NPC_WATCHER_NARJIL:
+                        WatcherNarjilGUID = creature->GetGUID();
+                        break;
+                    case NPC_WATCHER_GASHRA:
+                        WatcherGashraGUID = creature->GetGUID();
+                        break;
+                    case NPC_WATCHER_SILTHIK:
+                        WatcherSilthikGUID = creature->GetGUID();
+                        break;
+                    default:
                         break;
                 }
             }
 
-            void OnGameObjectCreate(GameObject* go)
+            void OnGameObjectCreate(GameObject* go) OVERRIDE
             {
                 switch (go->GetEntry())
                 {
-                    case 192395:
-                        uiKrikthirDoor = go->GetGUID();
-                        if (auiEncounter[0] == DONE)
-                            HandleGameObject(0, true, go);
+                    case GO_KRIKTHIR_DOOR:
+                    case GO_ANUBARAK_DOOR_1:
+                    case GO_ANUBARAK_DOOR_2:
+                    case GO_ANUBARAK_DOOR_3:
+                        AddDoor(go, true);
                         break;
-                    case 192396:
-                        uiAnubarakDoor[0] = go->GetGUID();
-                        break;
-                    case 192397:
-                        uiAnubarakDoor[1] = go->GetGUID();
-                        break;
-                    case 192398:
-                        uiAnubarakDoor[2] = go->GetGUID();
+                    default:
                         break;
                 }
             }
 
-            uint64 GetData64(uint32 identifier) const
+            void OnGameObjectRemove(GameObject* go) OVERRIDE
             {
-                switch (identifier)
+                switch (go->GetEntry())
                 {
-                    case DATA_KRIKTHIR_THE_GATEWATCHER: return uiKrikthir;
-                    case DATA_HADRONOX: return uiHadronox;
-                    case DATA_ANUBARAK: return uiAnubarak;
-                    case DATA_WATCHER_GASHRA: return uiWatcherGashra;
-                    case DATA_WATCHER_SILTHIK: return uiWatcherSilthik;
-                    case DATA_WATCHER_NARJIL: return uiWatcherNarjil;
-                    case DATA_FRONT_DOOR_TRIGGER_A_GUID: return frontDoorTriggerAGUID;
-                    case DATA_FRONT_DOOR_TRIGGER_B_GUID: return frontDoorTriggerBGUID;
+                    case GO_KRIKTHIR_DOOR:
+                    case GO_ANUBARAK_DOOR_1:
+                    case GO_ANUBARAK_DOOR_2:
+                    case GO_ANUBARAK_DOOR_3:
+                        AddDoor(go, false);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            uint64 GetData64(uint32 type) const OVERRIDE
+            {
+                switch (type)
+                {
+                    case DATA_KRIKTHIR_THE_GATEWATCHER:
+                        return KrikthirGUID;
+                    case DATA_HADRONOX:
+                        return HadronoxGUID;
+                    case DATA_ANUBARAK:
+                        return AnubarakGUID;
+                    case DATA_WATCHER_GASHRA:
+                        return WatcherGashraGUID;
+                    case DATA_WATCHER_SILTHIK:
+                        return WatcherSilthikGUID;
+                    case DATA_WATCHER_NARJIL:
+                        return WatcherNarjilGUID;
+                    default:
+                        break;
                 }
 
                 return 0;
             }
 
-            void SetData(uint32 type, uint32 data)
-            {
-                switch (type)
-                {
-                    case DATA_KRIKTHIR_THE_GATEWATCHER_EVENT:
-                        auiEncounter[0] = data;
-                        if (data == DONE)
-                            HandleGameObject(uiKrikthirDoor, true);
-                        break;
-                    case DATA_HADRONOX_EVENT:
-                        auiEncounter[1] = data; 
-                        break;
-                    case DATA_ANUBARAK_EVENT:
-                        auiEncounter[2] = data;
-                        if (data == IN_PROGRESS)
-                            for (uint8 i = 0; i < 3; ++i)
-                                HandleGameObject(uiAnubarakDoor[i], false);
-                        else if (data == NOT_STARTED || data == DONE)
-                            for (uint8 i = 0; i < 3; ++i)
-                                HandleGameObject(uiAnubarakDoor[i], true);
-                        break;
-                }
-
-                if (data == DONE)
-                {
-                    SaveToDB();
-                }
-            }
-
-            uint32 GetData(uint32 type) const
-            {
-                switch (type)
-                {
-                    case DATA_KRIKTHIR_THE_GATEWATCHER_EVENT: return auiEncounter[0];
-                    case DATA_HADRONOX_EVENT: return auiEncounter[1];
-                    case DATA_ANUBARAK_EVENT: return auiEncounter[2];
-                }
-
-                return 0;
-            }
-
-            std::string GetSaveData()
+            std::string GetSaveData() OVERRIDE
             {
                 OUT_SAVE_INST_DATA;
 
                 std::ostringstream saveStream;
-                saveStream << "A N " << auiEncounter[0] << ' ' << auiEncounter[1] << ' '
-                    << auiEncounter[2];
+                saveStream << "A N " << GetBossSaveData();
 
                 OUT_SAVE_INST_DATA_COMPLETE;
                 return saveStream.str();
             }
 
-            void Load(const char* in)
+            void Load(char const* str) OVERRIDE
             {
-                if (!in)
+                if (!str)
                 {
                     OUT_LOAD_INST_DATA_FAIL;
                     return;
                 }
 
-                OUT_LOAD_INST_DATA(in);
+                OUT_LOAD_INST_DATA(str);
 
                 char dataHead1, dataHead2;
-                uint16 data0, data1, data2;
 
-                std::istringstream loadStream(in);
-                loadStream >> dataHead1 >> dataHead2 >> data0 >> data1 >> data2;
+                std::istringstream loadStream(str);
+                loadStream >> dataHead1 >> dataHead2;
 
                 if (dataHead1 == 'A' && dataHead2 == 'N')
                 {
-                    auiEncounter[0] = data0;
-                    auiEncounter[1] = data1;
-                    auiEncounter[2] = data2;
-
-                    for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
-                        if (auiEncounter[i] == IN_PROGRESS)
-                            auiEncounter[i] = NOT_STARTED;
-
-                } else OUT_LOAD_INST_DATA_FAIL;
+                    for (uint32 i = 0; i < EncounterCount; ++i)
+                    {
+                        uint32 tmpState;
+                        loadStream >> tmpState;
+                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                            tmpState = NOT_STARTED;
+                        SetBossState(i, EncounterState(tmpState));
+                    }
+                }
+                else
+                    OUT_LOAD_INST_DATA_FAIL;
 
                 OUT_LOAD_INST_DATA_COMPLETE;
             }
+
+        protected:
+            uint64 KrikthirGUID;
+            uint64 HadronoxGUID;
+            uint64 AnubarakGUID;
+            uint64 WatcherGashraGUID;
+            uint64 WatcherSilthikGUID;
+            uint64 WatcherNarjilGUID;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const
+        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
         {
             return new instance_azjol_nerub_InstanceScript(map);
         }
@@ -225,5 +188,5 @@ class instance_azjol_nerub : public InstanceMapScript
 
 void AddSC_instance_azjol_nerub()
 {
-    new instance_azjol_nerub;
+   new instance_azjol_nerub();
 }

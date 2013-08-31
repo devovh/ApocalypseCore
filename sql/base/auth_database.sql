@@ -29,6 +29,7 @@ CREATE TABLE `account` (
   `sessionkey` varchar(80) NOT NULL DEFAULT '',
   `v` varchar(64) NOT NULL DEFAULT '',
   `s` varchar(64) NOT NULL DEFAULT '',
+  `token_key` varchar(100) NOT NULL DEFAULT '',
   `email` varchar(254) NOT NULL DEFAULT '',
   `joindate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_ip` varchar(15) NOT NULL DEFAULT '127.0.0.1',
@@ -107,32 +108,6 @@ CREATE TABLE `account_banned` (
 LOCK TABLES `account_banned` WRITE;
 /*!40000 ALTER TABLE `account_banned` DISABLE KEYS */;
 /*!40000 ALTER TABLE `account_banned` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `account_premium_apocalypsecore`
---
-
-DROP TABLE IF EXISTS `account_premium_apocalypsecore`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE IF NOT EXISTS `account_premium_apocalypsecore` (
-  `id` int(11) NOT NULL default '0' COMMENT 'Account id',
-  `setdate` bigint(40) NOT NULL default '0',
-  `unsetdate` bigint(40) NOT NULL default '0',
-  `premium_type` tinyint(4) unsigned NOT NULL default '1',
-  `active` tinyint(4) NOT NULL default '1',
-  PRIMARY KEY  (`id`,`setdate`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Premium Accounts Apocalypse Core';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `account_premium_apocalypsecore`
---
-
-LOCK TABLES `account_premium_apocalypsecore` WRITE;
-/*!40000 ALTER TABLE `account_premium_apocalypsecore` DISABLE KEYS */;
-/*!40000 ALTER TABLE `account_premium_apocalypsecore` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -495,7 +470,7 @@ DROP TABLE IF EXISTS `realmlist`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `realmlist` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) NOT NULL DEFAULT 'ApocalypseCore',
+  `name` varchar(32) NOT NULL DEFAULT '',
   `address` varchar(255) NOT NULL DEFAULT '127.0.0.1',
   `localAddress` varchar(255) NOT NULL DEFAULT '127.0.0.1',
   `localSubnetMask` varchar(255) NOT NULL DEFAULT '255.255.255.0',
@@ -517,7 +492,7 @@ CREATE TABLE `realmlist` (
 
 LOCK TABLES `realmlist` WRITE;
 /*!40000 ALTER TABLE `realmlist` DISABLE KEYS */;
-INSERT INTO `realmlist` VALUES (1,'ApocalypseCore','127.0.0.1','127.0.0.1','255.255.255.0',8085,1,0,1,0,0,12340);
+INSERT INTO `realmlist` VALUES (1,'Trinity','127.0.0.1','127.0.0.1','255.255.255.0',8085,1,0,1,0,0,12340);
 /*!40000 ALTER TABLE `realmlist` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -533,7 +508,7 @@ CREATE TABLE `uptime` (
   `starttime` int(10) unsigned NOT NULL DEFAULT '0',
   `uptime` int(10) unsigned NOT NULL DEFAULT '0',
   `maxplayers` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `revision` varchar(255) NOT NULL DEFAULT 'ApocalypseCore',
+  `revision` varchar(255) NOT NULL DEFAULT 'Trinitycore',
   PRIMARY KEY (`realmid`,`starttime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Uptime system';
 /*!40101 SET character_set_client = @saved_cs_client */;

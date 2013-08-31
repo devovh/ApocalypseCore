@@ -754,8 +754,8 @@ public:
         {
             currentPhase = PHASE_NONE;
             SummonTimer = 5000;
-            me->SetCanFly(true);
-            me->SetDisableGravity(true);
+            //! HACK: Creature's can't have MOVEMENTFLAG_FLYING
+            me->AddUnitMovementFlag(MOVEMENTFLAG_FLYING);
             me->RemoveAurasDueToSpell(SPELL_ORB_VISUAL);
             me->SetSpeed(MOVE_FLIGHT, 0.5f);
         }

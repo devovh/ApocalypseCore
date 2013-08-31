@@ -364,12 +364,6 @@ class boss_halion : public CreatureScript
 
             void DamageTaken(Unit* attacker, uint32& damage) OVERRIDE
             {
-                if (!me->IsInDist2d(3156.67f, 533.8108f, 38.0f))
-                {
-                    BossAI::DoTeleportAll(3156.037f, 533.2656f, 72.97205f, 0.0f);
-                    return;
-                }
-
                 if (me->HealthBelowPctDamaged(75, damage) && events.IsInPhase(PHASE_ONE))
                 {
                     events.SetPhase(PHASE_TWO);
@@ -842,8 +836,6 @@ class npc_halion_controller : public CreatureScript
                         _twilightDamageTaken = 0;
                         return;
                     }
-                    default:
-                        break;
                 }
 
                 _materialDamageTaken = 0;
@@ -889,8 +881,6 @@ class npc_halion_controller : public CreatureScript
             EventMap _events;
             InstanceScript* _instance;
             SummonList _summons;
-
-            bool _corporealityCheck;
 
             uint32 _twilightDamageTaken;
             uint32 _materialDamageTaken;

@@ -49,9 +49,7 @@ enum Spells
     SPELL_CHANNEL_YMIRON_TO_SPIRIT            = 48307,
 
     SPELL_SPIRIT_FOUNT                        = 48380,
-    H_SPELL_SPIRIT_FOUNT                      = 59320,
-	
-    SPELL_SPIRIT_VISUAL                       = 42744 // Probably the wrong spell. It looks similar.
+    H_SPELL_SPIRIT_FOUNT                      = 59320
 };
 
 //not in db
@@ -161,6 +159,7 @@ public:
 
         void Reset() OVERRIDE
         {
+            m_bIsWalking = false;
             m_bIsPause = false;
             m_bIsActiveWithBJORN = false;
             m_bIsActiveWithHALDOR = false;
@@ -225,7 +224,6 @@ public:
                         m_uiActivedCreatureGUID = temp->GetGUID();
                         temp->CastSpell(me, SPELL_CHANNEL_SPIRIT_TO_YMIRON, true);
                         temp->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
-                        temp->SetDisableGravity(true);
                         temp->SetDisableGravity(true);
                         switch (m_uiActiveOrder[m_uiActivedNumber])
                         {
@@ -330,7 +328,6 @@ public:
                             {
                                 temp->AddThreat(target, 0.0f);
                                 temp->AI()->AttackStart(target);
-                                temp->CastSpell(temp, SPELL_CHANNEL_SPIRIT_TO_YMIRON, true);
                             }
                         }
                     }
