@@ -2,6 +2,8 @@
 
 ## Coming Soon ApocalypseCore2
 
+# In development - *NOT PLAYABLE*
+
 + more info
 [ApocalypseCore](http://apocalypsecore.tk/)
 
